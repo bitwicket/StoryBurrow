@@ -1,0 +1,58 @@
+.sb-card-art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  isolation: isolate;
+  overflow: hidden;
+  background: linear-gradient(155deg, #4c6051, #483b55);
+}
+.sb-card-art-backdrop,
+.sb-card-art-image {
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  inset: 0;
+}
+.sb-card-art-backdrop {
+  object-fit: cover;
+  filter: blur(24px) brightness(.50) saturate(.9);
+  transform: scale(1.14);
+  z-index: -1;
+}
+.sb-card-art-image {
+  object-fit: contain;
+  z-index: 1;
+}
+.sb-card-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(to bottom, transparent 85%, rgba(0,0,0,.12));
+  pointer-events: none;
+}
+.game-card .version {
+  margin: -4px 0 10px;
+  color: var(--muted);
+  font-size: .8rem;
+}
+.game-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+.game-card > .sb-card-art,
+.game-card > .cover {
+    flex-shrink: 0;
+}
+.game-card > .card-details {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+}
+.game-card > .card-details > .play,
+.game-card > .card-details > .disabled-play,
+.game-card > .card-details > form {
+    margin-top: auto;
+}

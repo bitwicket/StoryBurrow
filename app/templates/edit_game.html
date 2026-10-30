@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit {{ game.title }} — StoryBurrow</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='edit_game.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='art_picker.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='uninstall.css') }}">
+</head>
+<body>
+<header class="site-header"><div class="brand">Story<span>Burrow</span></div><span class="tagline">Your stories, one cozy place.</span></header>
+<main class="sb-edit-page">
+  <a href="{{ url_for('library') }}" class="sb-back">← Library</a>
+  <p class="eyebrow">GAME MANAGEMENT</p>
+  <h1>Edit Game</h1>
+  {% if error %}<p class="notice" role="alert">{{ error }}</p>{% endif %}
+  <section class="sb-edit-panel">
+    <div class="sb-edit-art">
+      {% if game.cover %}
+        <img src="{{ url_for('cover', game_id=game.id) }}" alt="Current cover for {{ game.title }}">
+      {% else %}
+        <div class="sb-edit-placeholder" aria-label="No artwork available">✦</div>
+      {% endif %}
+      <p class="sb-edit-note">{% if record and game.vndb_id %}<button type="button" id="sb-art-open" class="sb-art-open">Change artwork</button>{% else %}VNDB artwork selection requires a catalog-managed game with a confirmed VNDB match.{% endif %}</p>
+    </div>
+    <div class="sb-edit-fields">
+      {% if record %}
+
+        <form method="post" action="{{ url_for('edits.edit_game', game_id=game.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf }}">
+          <label for="sb-title">Display title</label>
+          <input id="sb-title" name="title" maxlength="200" required value="{{ game.title }}">
+          <label for="sb-version">Installed version</label>
+          <input id="sb-version" name="version" maxlength="100" value="{{ game.version or '' }}">
+          <p class="sb-edit-note">Installation: <code>{{ game.id }}</code></p>
+          <p class="sb-edit-note">Save directory:
+            {% if record.save_directory %}<code>{{ record.save_directory }}</code>
+            <small>({{ record.save_directory_confidence or 'unverified' }})</small>
+            {% else %}<span>Unknown</span>{% endif %}
+          </p>
+          {% if game.vndb_id %}<p class="sb-edit-note">VNDB: <code>{{ game.vndb_id }}</code></p>{% endif %}
+          <div class="sb-edit-actions">
+            <button class="play" type="submit">Save details</button>
+            <a class="sb-cancel" href="{{ url_for('library') }}">Cancel</a>
+          </div>
+        </form>
+      {% else %}
+        <h2>{{ game.title }}</h2>
+        <p><a class="sb-edit-link" href="{{ url_for('adoption.adopt', game_id=game.id) }}">Adopt existing saves</a></p>
+        <p>This game was found in the library filesystem but has no managed catalog installation. Details are read-only for now.</p>
+        <p class="sb-edit-note">Directory: <code>{{ game.id }}</code></p>
+        <a class="sb-cancel" href="{{ url_for('library') }}">Back to Library</a>
+      {% endif %}
+    </div>
+  </section>
+  {% if record and game.vndb_id %}
+  <section class="sb-art-picker" id="sb-art-picker" hidden data-url="{{ url_for('edits.artwork_options', game_id=game.id) }}" data-preference-url="{{ url_for('edits.artwork_preferences', game_id=game.id) }}" data-csrf="{{ csrf }}">
+    <div class="sb-art-header"><h2>Choose artwork</h2><button type="button" class="sb-art-close" id="sb-art-close">Close</button></div>
+    <label class="sb-art-preference"><input id="sb-art-explicit" type="checkbox"> Allow Explicit Images from VNDB</label>
+    <p class="sb-edit-note">This setting is saved for future visits. Changing it never replaces existing artwork.</p>
+    <p id="sb-art-feedback" role="status" aria-live="polite">Loading available artwork…</p>
+    <div class="sb-art-grid" id="sb-art-grid" role="group" aria-label="VNDB artwork choices"></div>
+    <div class="sb-art-actions"><button class="play" type="button" id="sb-art-save" disabled>Save selected artwork</button><button type="button" id="sb-art-cancel" class="sb-art-close">Cancel</button></div>
+  </section>
+  {% endif %}
+  {% if record %}
+  <section class="sb-edit-future" aria-label="Update game">
+    <h2>Update game</h2>
+    <p>Upload a replacement build for this installation. Saves are snapshotted, and the previous game files are retained for rollback.</p>
+    <a class="play" href="{{ url_for('updates.update_page', game_id=game.id) }}">Update Game</a>
+  </section>
+  <section class="sb-edit-future sb-uninstall" aria-label="Uninstall game">
+    <h2>Uninstall game</h2>
+    <p>Remove this installation from StoryBurrow and delete its game files. <strong>Saved games in /saves are preserved.</strong> This cannot be undone.</p>
+    <form method="post" action="{{ url_for('edits.uninstall_game', game_id=game.id) }}"
+          onsubmit="return confirm('Uninstall this game? Game files will be deleted, but saves will be kept.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label for="sb-confirm-directory">Type the installation directory to confirm: <code>{{ game.id }}</code></label>
+      <input id="sb-confirm-directory" name="confirm_directory" autocomplete="off" required pattern="{{ game.id|e }}" placeholder="{{ game.id }}">
+      <button type="submit" class="sb-uninstall-button">Uninstall game</button>
+    </form>
+  </section>
+    <section class="sb-edit-future sb-uninstall" aria-label="Forget game">
+    <h2>Forget game</h2>
+    <p>Permanently delete this installation, its managed saves, snapshots, temporary recovery copies, and associated retained builds. This cannot be undone.</p>
+    <form method="post" action="{{ url_for('edits.forget_game', game_id=game.id) }}"
+          onsubmit="return confirm('Forget this game? All game files will be deleted, including saves.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label for="sb-confirm-forget">
+        Type 'delete' to permanently remove this game:
+      </label>
+      <input
+        id="sb-confirm-forget"
+        name="confirm_delete"
+        autocomplete="off"
+        required
+        pattern="delete"
+        placeholder="delete"
+      >
+      <button type="submit" class="sb-uninstall-button">Forget game</button>
+    </form>
+  </section>
+  {% endif %}
+
+{% if record %}<section class="sb-edit-future" aria-label="Previous game builds"><h2>Previous builds</h2><p>Roll back to a retained build or remove it early. New backups automatically expire after 48 hours.</p><a class="play" href="{{ url_for('build_backups.page', game_id=game.id) }}">Manage previous builds</a></section>{% endif %}
+</main>
+{% if record and game.vndb_id %}<script src="{{ url_for('static', filename='art_picker.js') }}" defer></script>{% endif %}
+</body>
+</html>

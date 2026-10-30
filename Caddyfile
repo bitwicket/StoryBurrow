@@ -1,0 +1,51 @@
+{
+    auto_https disable_redirects
+    skip_install_trust
+    default_sni {$STORYBURROW_HOST}
+}
+
+https://{$STORYBURROW_HOST}:2500 {
+    tls internal
+    log {
+        output stdout
+        format console
+    }
+    encode zstd gzip
+
+    # Keep auth-check endpoint inaccessible from the public Caddy listener.
+    @private path /internal/*
+    handle @private {
+        respond 404
+    }
+
+    handle /stream {
+        redir /stream/ 308
+    }
+
+    # Prefix is removed before forwarding: leave SELKIES_SUBFOLDER unset.
+    handle_path /stream/* {
+        forward_auth 127.0.0.1:2501 {
+            uri /internal/stream-auth
+
+            # Present this subrequest to Flask as ordinary HTTP.
+            header_up -Connection
+            header_up -Upgrade
+            header_up -Sec-WebSocket-Key
+            header_up -Sec-WebSocket-Version
+            header_up -Sec-WebSocket-Extensions
+            header_up -Sec-WebSocket-Protocol
+        }
+
+        # The real WebSocket upgrade is preserved here.
+        reverse_proxy https://127.0.0.1:6080 {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }
+    }
+
+
+    handle {
+        reverse_proxy 127.0.0.1:2501
+    }
+}

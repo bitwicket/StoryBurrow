@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StoryBurrow — Library</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='import_modal.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='library_art.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='art_picker.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='import_art_picker.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='edit_game.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='save_manager.css') }}">
+</head>
+<body>
+  <header class="site-header"><div class="brand">Story<span>Burrow</span></div><div class="header-actions"><span class="tagline">Your stories, one cozy place.</span><form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ logout_csrf }}"><button class="logout" type="submit">Log out</button></form></div></header>
+  <main>
+    <!-- <p class="eyebrow">THE LIBRARY</p> -->
+    <h1>Settle in for a story.</h1>
+    <p class="intro">Your installed games, ready whenever you are.</p>
+    <button id="sb-import-open" type="button" class="play" style="width:auto;display:inline-block;">+ Add game</button>
+    {% if not status.ok %}<p class="notice">Game manager unavailable. Launching is temporarily disabled.</p>{% endif %}
+    {% if error %}<p class="notice">{{ error }}</p>{% endif %}
+    {% if status.running %}
+      <div class="active-banner">
+        <span>Currently playing: <strong>{{ status.game }}</strong></span>
+        <div class="session-actions">
+          <a href="{{ url_for('player') }}">Return to player</a>
+          <form method="post" action="{{ url_for('stop_game') }}"
+                onsubmit="return confirm('Stop the running game? Unsaved progress may be lost.');">
+            <input type="hidden" name="csrf_token" value="{{ logout_csrf }}">
+            <button type="submit" class="stop-game">Stop game</button>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+    {% if games %}
+    <section class="library" aria-label="Installed games">
+      {% for game in games %}
+      <article class="game-card">
+        {% if game.cover %}
+          {% set art_url = url_for('cover', game_id=game.id) %}
+          <div class="sb-card-art" aria-label="Artwork for {{ game.title }}">
+            <img class="sb-card-art-backdrop" src="{{ art_url }}" alt="" aria-hidden="true" loading="lazy" decoding="async">
+            <img class="sb-card-art-image" src="{{ art_url }}" alt="" loading="lazy" decoding="async">
+          </div>
+        {% else %}
+          <div class="cover placeholder"><span class="book-icon" aria-hidden="true">✦</span><span>{{ game.title }}</span></div>
+        {% endif %}
+        <div class="card-details">
+          <h2>{{ game.title }}</h2>
+          {% if game.version %}
+            <p class="version">Version {{ game.version }}</p>
+          {% endif %}
+          {% if status.running and status.game == game.id %}
+            <p class="status active"><span class="dot"></span>Running</p>
+            <a class="play" href="{{ url_for('player') }}">Open player ↗</a>
+          {% elif status.running %}
+            <p class="status">Another game is running</p>
+            <span class="disabled-play">Play unavailable</span>
+          {% elif status.ok and not error %}
+            <p class="status">Installed · Ready to play</p>
+            <form action="{{ url_for('play', game_id=game.id) }}" method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <button class="play" type="submit">Play</button>
+            </form>
+          {% else %}
+            <p class="status">Manager offline</p><span class="disabled-play">Unavailable</span>
+          {% endif %}
+          <div class="sb-card-secondary-actions">
+          {% if status.ok and not status.running and not error %}
+            <a class="sb-edit-link" href="{{ url_for('edits.edit_game', game_id=game.id) }}">Edit</a>
+            <a class="sb-edit-link" href="{{ url_for('save_manager.saves_page', game_id=game.id) }}">Saves</a>
+          {% else %}
+            <span class="sb-edit-disabled" title="Stop the current game to access management">Edit</span>
+            <span class="sb-edit-disabled" title="Stop the current game to access managed saves">Saves</span>
+          {% endif %}
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+    {% elif not error %}
+      <div class="empty"><h2>No games found</h2><p>Add a Linux Ren'Py game under /games with a top-level .sh launcher.</p></div>
+    {% endif %}
+  </main>
+  {% include 'import_modal.html' %}
+</body>
+</html>

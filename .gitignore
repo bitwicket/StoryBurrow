@@ -1,0 +1,78 @@
+
+# ==========================================
+# StoryBurrow - Git Ignore
+# ==========================================
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Game installations and user content
+games/*
+mods/*
+saves/*
+
+# Application runtime data
+data/*
+logs/*
+cache/*
+tmp/*
+temp/*
+storyburrow-save-id-v0.8.1
+
+# Preserve empty directory structure
+!games/.gitkeep
+!mods/.gitkeep
+!saves/.gitkeep
+!data/.gitkeep
+!logs/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.venv/
+venv/
+tools/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.whl
+
+# Docker overrides and local files
+docker-compose.override.yml
+compose.override.yml
+*.pid
+*.sock
+docker-compose.dev.yml
+storyburrow-data/
+
+# Editors and operating systems
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.example.json
+.idea/
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+
+# Temporary and backup files
+*.tmp
+*.temp
+*.bak
+*.orig
+*.log

@@ -1,0 +1,50 @@
+
+services:
+  storyburrow:
+    container_name: storyburrow
+    image: storyburrow:dev
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${STORYBURROW_PORT}:2500"
+    environment:
+      TZ: ${TZ}
+      SELKIES_PORT: "6080" #Never leaves container, shouldn't need changed. Is hardcoded in Caddy.
+      SELKIES_ENABLE_DUAL_MODE: "false"
+      SELKIES_ENABLE_HTTPS: "true"
+      #Auth
+      SELKIES_ENABLE_BASIC_AUTH: "false"
+      SELKIES_UI_SIDEBAR_SHOW_KEYBOARD_BUTTON: "false"
+      SELKIES_ALLOWED_ORIGINS: "https://${STORYBURROW_HOST}:${STORYBURROW_PORT}"
+      SELKIES_FRAME_ANCESTORS: "https://${STORYBURROW_HOST}:${STORYBURROW_PORT}"
+      SELKIES_MANUAL_RESOLUTION: "true"
+      SELKIES_MANUAL_WIDTH: ${RESOLUTIONW}
+      SELKIES_MANUAL_HEIGHT: ${RESOLUTIONH}
+      SELKIES_ENABLE_RESIZE: "false"
+      # Display
+      START_LXQT: "false"
+      DISPLAY: ":20"
+      SDL_VIDEODRIVER: x11
+      DISPLAY_SIZEW: ${RESOLUTIONW}
+      DISPLAY_SIZEH: ${RESOLUTIONH}
+      # Ren'Py
+      RENPY_DISABLE_FULLSCREEN: "1" #The window will be resized to fit the specified resolution appearing fullscreen, but improving scaling stability.
+      # StoryBurrow UI
+      STORYBURROW_HOST: ${STORYBURROW_HOST}
+      PYTHONUNBUFFERED: "1"
+      volumes:
+        - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/games:/games
+        - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/saves:/saves
+        - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/data:/data
+        - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/logs:/logs
+        - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/certs:/certs
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "${RENDER_GID}"
+    shm_size: "2gb"
+    stdin_open: true
+    tty: true

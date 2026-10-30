@@ -1,0 +1,41 @@
+<div id="sb-import" class="sb-import-backdrop" data-csrf="{{ import_csrf }}" hidden>
+  <section class="sb-import-dialog" role="dialog" aria-modal="true" aria-labelledby="sb-import-title">
+    <div class="sb-import-heading"><h2 id="sb-import-title">Add a game</h2><button type="button" id="sb-import-close" aria-label="Close import">×</button></div>
+    <p class="sb-import-hint">Upload a Ren'Py ZIP or extracted folder. Review a Ren'Py game before installing.</p>
+    <div id="sb-import-pick">
+      <div class="sb-import-drop" id="sb-import-drop">Drop a ZIP here, or choose a file or folder below.</div>
+      <div class="sb-import-actions">
+        <button type="button" id="sb-pick-zip">Choose ZIP</button>
+        <button type="button" id="sb-pick-folder">Choose Folder</button>
+      </div>
+      <input id="sb-zip-input" type="file" accept=".zip,application/zip" hidden>
+      <input id="sb-folder-input" type="file" webkitdirectory multiple hidden>
+    </div>
+    <div id="sb-import-review" hidden>
+      <p id="sb-import-source"></p>
+      <label for="sb-import-name">Display title</label><input id="sb-import-name" maxlength="200">
+      <label for="sb-import-version">Installed version</label><input id="sb-import-version" maxlength="100" placeholder="Unknown">
+      <p id="sb-import-technical"></p>
+      <div class="sb-import-actions"><button type="button" id="sb-search-vndb">Search VNDB</button><button type="button" id="sb-skip-vndb">Skip VNDB</button></div>
+      <div id="sb-vndb-results" aria-live="polite"></div>
+      <p id="sb-vndb-selection"></p>
+      <section id="sb-import-artwork" class="sb-art-picker" hidden aria-label="Artwork selection">
+        <h3>Choose library artwork</h3>
+        <label class="sb-art-preference"><input id="sb-import-art-explicit" type="checkbox"> Allow Explicit Images from VNDB</label>
+        <p class="sb-import-hint">This preference persists across visits. Images are previews until confirmed.</p>
+        <div id="sb-import-art-grid" class="sb-art-grid" role="group" aria-label="VNDB artwork options"></div>
+        <p id="sb-import-art-feedback" role="status" aria-live="polite"></p>
+        <button id="sb-import-art-confirm" class="play" type="button" disabled>Confirm artwork</button>
+      </section>
+      <p class="sb-import-hint">Installation creates a new game. Existing game directories are never overwritten.</p>
+    </div>
+    <div id="sb-upload-status">
+      <progress id="sb-upload-progress" max="100" value="0"
+                style="width:100%" hidden></progress>
+      <p id="sb-upload-progress-text" aria-live="polite"></p>
+    </div>
+    <p class="sb-import-feedback" id="sb-import-feedback" role="status" aria-live="polite"></p>
+  </section>
+</div>
+<script src="{{ url_for('static', filename='import_art_picker.js') }}" defer></script>
+<script src="{{ url_for('static', filename='import_modal.js') }}" defer></script>

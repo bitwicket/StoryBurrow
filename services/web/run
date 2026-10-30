@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+cd /app
+exec /opt/storyburrow-venv/bin/python -m flask --app main run --host 127.0.0.1 --port 2501 --no-debugger --no-reload

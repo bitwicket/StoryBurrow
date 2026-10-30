@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StoryBurrow — Player</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+/* Controls live above Selkies, leaving the fullscreen stream unchanged. */
+.sb-controls-toggle {position:fixed;z-index:40;left:calc(env(safe-area-inset-left, 0px) + 10px);top:calc(env(safe-area-inset-top, 0px) + 10px);border:1px solid #7c6a90;border-radius:999px;background:#252d28ed;color:#f5f0e7;padding:11px 15px;font:600 14px system-ui;cursor:pointer;touch-action:manipulation}
+.sb-controls {position:fixed;z-index:41;left:calc(env(safe-area-inset-left, 0px) + 10px);top:calc(env(safe-area-inset-top, 0px) + 66px);width:min(340px,calc(100vw - 24px));max-height:min(calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 82px),440px);overflow:auto;background:#252d28f5;color:#f5f0e7;border:1px solid #78668c;border-radius:14px;padding:14px;box-shadow:0 12px 36px #0009;font:14px system-ui}
+.sb-controls[hidden],.sb-entry[hidden],.sb-controls-toggle[hidden] {display:none!important}
+.sb-control-row {display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.sb-controls button {cursor:pointer;background:#373f38;color:#f5f0e7;border:1px solid #657065;border-radius:9px;min-height:44px;padding:10px 12px;font:600 14px system-ui;touch-action:manipulation}
+.sb-control-row button {flex:1}
+.sb-controls button:disabled {opacity:.55;cursor:wait}
+.sb-controls input {font:16px system-ui;width:100%;padding:11px;color:#18151c;background:#fff;border-radius:8px;border:1px solid #a49aa9}
+.sb-controls label {display:block;margin:12px 0 6px}
+.sb-controls .sb-hint {font-size:12px;color:#c0c9be;margin:8px 0 0}
+.sb-feedback {min-height:1em;color:#ffcfbb}
+/* Both corner buttons fade while idle; the open controls panel stays readable. */
+.sb-controls-toggle, .player-body .mobile-player-back {opacity:1;transition:opacity .3s ease,background .3s ease}
+.sb-controls-toggle.sb-idle, .player-body .mobile-player-back.sb-idle {opacity:.38}
+.sb-controls-toggle:hover,.sb-controls-toggle:focus-visible,.sb-controls-toggle[aria-expanded="true"],.player-body .mobile-player-back:hover,.player-body .mobile-player-back:focus-visible {opacity:1}
+.sb-controls-toggle:focus-visible {outline:3px solid #c5a3e1;outline-offset:2px}
+@media (prefers-reduced-motion:reduce) {.sb-controls-toggle,.player-body .mobile-player-back {transition:none}}
+
+</style></head>
+<body class="player-body">
+<main class="player-page">
+<a class="mobile-player-back" href="{{ url_for('library') }}" aria-label="Return to library">← Library</a>
+<iframe id="stream" class="player-frame" src="/stream/" title="StoryBurrow game stream" allow="autoplay; fullscreen; gamepad; microphone" allowfullscreen referrerpolicy="same-origin"></iframe>
+<p class="player-status" id="session-message" aria-live="polite" role="status"></p>
+<button id="sb-controls-toggle" class="sb-controls-toggle" aria-expanded="false" aria-controls="sb-controls" type="button">Controls</button>
+<section id="sb-controls" class="sb-controls" aria-label="Game controls" hidden>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><strong>Game controls</strong><button id="sb-close" type="button">Close</button></div>
+  <div class="sb-control-row"><button type="button" data-sb-action="rollback">↶ Rollback</button><button type="button" data-sb-action="forward">↷ Forward</button><button type="button" data-sb-action="menu">☰ Menu</button></div>
+  <div class="sb-control-row"><button id="sb-keyboard" type="button" aria-expanded="false">Keyboard / Name</button></div>
+  <form id="sb-entry" class="sb-entry" hidden>
+    <label for="sb-text">Name or text</label>
+    <input id="sb-text" type="text" autocomplete="off" autocapitalize="sentences" maxlength="80" placeholder="Leave empty to accept default">
+    <p class="sb-hint">Enter with nothing typed accepts the game's default. Typing a value replaces it and confirms.</p>
+    <div class="sb-control-row"><button type="submit" id="sb-submit">Enter / Confirm</button></div>
+  </form>
+  <p class="sb-feedback" id="sb-feedback" role="status" aria-live="polite"></p>
+</section>
+</main>
+<script>
+(function() {
+  const expectedGame = {{ game|tojson }};
+  const inputUrl = {{ url_for('player_input')|tojson }};
+  const inputCsrf = {{ input_csrf|tojson }};
+  const toggle = document.getElementById('sb-controls-toggle');
+  const libraryLink = document.querySelector('.mobile-player-back');
+  const controls = document.getElementById('sb-controls');
+  const entry = document.getElementById('sb-entry');
+  const textbox = document.getElementById('sb-text');
+  const feedback = document.getElementById('sb-feedback');
+  let sending = false;
+  let fadeTimer;
+  function wakeButtons() {
+    toggle.classList.remove('sb-idle');
+    libraryLink.classList.remove('sb-idle');
+    clearTimeout(fadeTimer);
+    if (controls.hidden) fadeTimer = setTimeout(() => {
+      if (!controls.hidden) return;
+      if (document.activeElement !== toggle) toggle.classList.add('sb-idle');
+      if (document.activeElement !== libraryLink) libraryLink.classList.add('sb-idle');
+    }, 4000);
+  }
+  function showControls(open) {
+    controls.hidden = !open;
+    toggle.setAttribute('aria-expanded', String(open));
+    wakeButtons();
+  }
+  toggle.addEventListener('click', () => showControls(controls.hidden));
+  for (const element of [toggle, libraryLink]) {
+    element.addEventListener('pointerenter', wakeButtons);
+    element.addEventListener('pointerdown', wakeButtons);
+    element.addEventListener('focus', wakeButtons);
+    element.addEventListener('blur', wakeButtons);
+  }
+  wakeButtons();
+  document.getElementById('sb-close').addEventListener('click', () => showControls(false));
+  document.getElementById('sb-keyboard').addEventListener('click', () => {
+    entry.hidden = !entry.hidden;
+    document.getElementById('sb-keyboard').setAttribute('aria-expanded', String(!entry.hidden));
+    if (!entry.hidden) textbox.focus();
+  });
+  async function sendInput(action, text) {
+    if (sending) return;
+    sending = true;
+    feedback.textContent = '';
+    controls.querySelectorAll('button').forEach(button => button.disabled = true);
+    try {
+      const response = await fetch(inputUrl, {
+        method: 'POST', credentials: 'same-origin', cache: 'no-store',
+        headers: {'Content-Type': 'application/json', 'X-CSRF-Token': inputCsrf},
+        body: JSON.stringify({game: expectedGame, action, ...(action === 'text' ? {text} : {})})
+      });
+      if (response.redirected || response.status === 401) { window.location.assign('/login'); return; }
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || 'Input not delivered');
+      if (action === 'text') {textbox.value = ''; entry.hidden = true; document.getElementById('sb-keyboard').setAttribute('aria-expanded', 'false');}
+      showControls(false);
+    } catch (error) {feedback.textContent = error.message || 'Unable to send input';}
+    finally {sending = false; controls.querySelectorAll('button').forEach(button => button.disabled = false);}
+  }
+  controls.querySelectorAll('[data-sb-action]').forEach(button => {
+    button.addEventListener('click', () => sendInput(button.dataset.sbAction));
+  });
+  entry.addEventListener('submit', event => {
+    event.preventDefault();
+    sendInput('text', textbox.value);
+  });
+  let busy = false;
+  async function poll() {
+    if (busy) return;
+    busy = true;
+    try {
+      const response = await fetch({{ url_for('session_status')|tojson }}, {credentials:'same-origin',cache:'no-store'});
+      if (response.status === 401 || response.redirected) {window.location.assign('/login');return;}
+      if (!response.ok) throw new Error('Session status unavailable');
+      const state = await response.json();
+      if (state.ok && (!state.running || state.game !== expectedGame)) {
+        window.location.replace({{ url_for('library')|tojson }});
+      }
+    } catch (_) {
+      document.getElementById('session-message').textContent = 'Connection status unavailable; stream continues.';
+    } finally {busy = false;}
+  }
+  poll();
+  setInterval(poll, 2000);
+})();
+</script>
+</body></html>

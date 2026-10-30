@@ -1,0 +1,71 @@
+# Git and repository metadata
+.git
+.gitignore
+.gitattributes
+.github/
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*~
+
+# Local settings and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+certs/
+
+# Runtime data
+games/
+saves/
+mods/
+logs/
+uploads/
+snapshots/
+backups/
+*.sqlite
+*.sqlite3
+*.db
+
+# Development and testing
+tests/
+.coverage
+htmlcov/
+*.log
+tools/
+
+# Local archives and build artifacts
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+dist/
+build/
+
+*.crt
+docker-compose.override.yml
+compose.override.yml
+*.bak
+*.orig
+*.tmp
+*.sock
+*.pid
+docker-compose.dev.yml
+storyburrow-data/

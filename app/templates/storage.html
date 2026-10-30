@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Storage — StoryBurrow</title><link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='edit_game.css') }}">
+<style>.storage{max-width:840px;margin:2rem auto;padding:1.5rem}.snapshot{border:1px solid var(--border);padding:1rem;border-radius:12px;margin:1rem 0}.snapshot form{display:inline-block;margin-left:.5rem}.snapshot input{max-width:260px}.snapshot a,.snapshot button{margin-top:.5rem}.muted{color:var(--muted)}</style>
+</head><body><header class="site-header"><div class="brand">Story<span>Burrow</span></div><span class="tagline">Your stories, one cozy place.</span></header>
+<main class="storage"><a href="{{ url_for('edits.edit_game',game_id=game_id) }}">← Edit Game</a>
+<p class="eyebrow">SAVE MANAGEMENT</p><h1>Snapshot storage</h1>
+<p>Game: <strong>{{ game_id }}</strong></p><p class="muted">Update and adoption snapshots remain until you remove them. Download a snapshot before deleting it if you want to keep a local copy. Deletion is permanent.</p>
+{% for snapshot in snapshots %}<section class="snapshot"><strong>{{snapshot.name}}</strong>
+<p class="muted">{% if snapshot.mb is not none %}{{snapshot.mb}} MiB{% else %}Cannot determine size — unsafe snapshot contents{% endif %}</p>
+{% if snapshot.mb is not none %}<a href="{{url_for('storage.download_snapshot',game_id=game_id,label=snapshot.name)}}">Export ZIP</a>
+<form method="post" action="{{url_for('storage.delete_snapshot',game_id=game_id,label=snapshot.name)}}" onsubmit="return confirm('Permanently delete this snapshot? You can export a ZIP first.');">
+<input type="hidden" name="csrf_token" value="{{csrf}}"><label>Type snapshot name to delete:<input required name="confirm" autocomplete="off" placeholder="{{snapshot.name}}"></label>
+<button type="submit">Delete permanently</button></form>{% endif %}
+</section>{% else %}<p>No saved snapshots for this installation.</p>{% endfor %}
+</main></body></html>

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Adopt {{ p.name }} — StoryBurrow</title><link rel="stylesheet" href="{{ url_for('static',filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='edit_game.css') }}"></head><body>
+<header class="site-header"><div class="brand">Story<span>Burrow</span></div><span class="tagline">Your stories, one cozy place.</span></header>
+<main class="sb-edit-page"><a class="sb-back" href="{{ url_for('edits.edit_game', game_id=p.name) }}">← Edit game</a>
+<p class="eyebrow">SAVE MANAGEMENT</p><h1>Adopt existing saves</h1>
+<p>Review the two legacy save locations for <strong>{{ p.name }}</strong>. Both originals will be preserved in a permanent pre-adoption snapshot. The native directory is not deleted; the game-local directory is renamed for safekeeping.</p>
+<section class="sb-edit-panel" style="display:block;padding:1.5rem">
+<p><strong>Native ID:</strong> <code>{{ p.save_id }}</code></p>
+<p><strong>Native files:</strong> {{ p.sources.native|length }} · <strong>Game-local files:</strong> {{ p.sources.local|length }}</p>
+<p><strong>Unique filenames:</strong> {{ p.names|length }} · <strong>Conflicts requiring review:</strong> {{ p.conflicts|length }}</p>
+<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+<label for="title">Display title</label><input id="title" name="title" required maxlength="200" value="{{ p.name }}">
+<label for="version">Installed version (optional)</label><input id="version" name="version" maxlength="100" value="{{ p.rows[0].installed_version or '' if p.rows else '' }}">
+<h2>Filename conflicts</h2>
+{% if p.conflicts %}<p>Choose which source becomes the active copy for each conflicting file. Both copies remain in the adoption snapshot.</p>
+{% for filename in p.conflicts %}
+<fieldset style="border:1px solid var(--border);border-radius:8px;margin:1rem 0;padding:1rem">
+<legend><code>{{ filename }}</code></legend>
+<label><input type="radio" name="choose_{{ filename }}" value="native" required> Native · {{ (p.sources.native[filename].stat().st_size / 1024)|round(1) }} KiB · {{ p.sources.native[filename].stat().st_mtime|int }}</label>
+<label><input type="radio" name="choose_{{ filename }}" value="local" required> Game-local · {{ (p.sources.local[filename].stat().st_size / 1024)|round(1) }} KiB · {{ p.sources.local[filename].stat().st_mtime|int }}</label>
+</fieldset>
+{% endfor %}
+{% else %}<p>No differing duplicate filenames; identical duplicates will be preserved.</p>{% endif %}
+<p><strong>Files with no conflict</strong> will be included automatically.</p>
+<label for="confirm">Type <code>{{ p.name }}</code> to confirm adoption:</label><input id="confirm" name="confirm" required autocomplete="off">
+<p><button class="play" type="submit">Adopt game and saves</button></p>
+</form></section></main></body></html>

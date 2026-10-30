@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saves — {{ game.title }} — StoryBurrow</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='save_manager.css') }}">
+<style>.sb-snapshot-import {display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--border,#39463e)}.sb-snapshot-import label {display:flex; align-items:center; gap:8px}.sb-snapshot-import button {border-radius:8px; padding:9px 14px; cursor:pointer}.sb-snapshot-import .sb-small {flex-basis:100%}</style>
+</head>
+<body>
+<header class="site-header"><div class="brand">Story<span>Burrow</span></div><span class="tagline">Your stories, one cozy place.</span></header>
+<main class="sb-save-page">
+<a class="sb-back" href="{{ url_for('library') }}">← Library</a>
+<p class="eyebrow">SAVE MANAGEMENT</p><h1>{{ game.title }}</h1>
+<p class="sb-save-intro">Browse save screenshots, recorded game versions, playtime and update snapshots. Export, import, copy, restore and recover saves. Changes have 24-hour recovery protection.</p>
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}<div class="sb-save-notices" role="status" aria-live="polite">
+{% for category, message in messages %}<p class="sb-save-notice">{{ message }}</p>{% endfor %}
+</div>{% endif %}
+{% endwith %}
+{% if unsupported %}
+<section class="sb-save-panel"><h2>Managed saves not available</h2><p>This installation has not been migrated to StoryBurrow's managed save storage.</p></section>
+{% else %}
+<div class="sb-save-tabs" role="tablist" aria-label="Save manager sections">
+<button type="button" role="tab" aria-selected="true" aria-controls="sb-saves" id="sb-tab-saves">Saves <span>{{ saves|length }}</span></button>
+<button type="button" role="tab" aria-selected="false" aria-controls="sb-snapshots" id="sb-tab-snapshots">Snapshots <span>{{ snapshots|length }}</span></button>
+</div>
+<section class="sb-save-panel" id="sb-saves" role="tabpanel" aria-labelledby="sb-tab-saves">
+<h2>Current saves</h2>
+<form class="sb-save-tools" method="post" action="{{ url_for('save_actions.import_save', game_id=game.id) }}" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<label>Import save <input type="file" name="save" accept=".save" required></label>
+<button type="submit">Import</button></form><p class="sb-small">Files in this installation's current managed save directory.</p>
+{% if saves %}<div class="sb-save-list">{% for item in saves %}
+<div class="sb-save-entry sb-rich-save">
+{% if item.thumbnail %}<img class="sb-save-thumb" loading="lazy" alt="Screenshot for {{ item.name }}" src="{{ url_for('save_manager.save_thumbnail', game_id=game.id, filename=item.name) }}">{% endif %}
+<div class="sb-save-detail"><strong>{{ item.name }}</strong>
+{% if item.label %}<span class="sb-save-label">{{ item.label }}</span>{% endif %}
+<small>{{ item.kind }}{% if item.version %} · Game {{ item.version }}{% endif %}{% if item.runtime %} · {{ item.runtime }} played{% endif %}</small>
+{% if item.engine %}<small>Ren’Py {{ item.engine }}</small>{% endif %}
+{% if item.metadata_status and item.metadata_status != 'Available' %}<small>Metadata: {{ item.metadata_status }}</small>{% endif %}
+</div><div class="sb-save-meta">{{ item.size }}<small>{{ item.created or item.modified }}</small></div><div class="sb-save-actions">
+{% if item.name.endswith('.save') %}<a href="{{ url_for('save_editor.editor', game_id=game.id, filename=item.name) }}">Variables</a>{% endif %}
+<a href="{{ url_for('save_actions.export', game_id=game.id, filename=item.name) }}">Export</a>
+{% if copy_targets %}<form method="post" action="{{ url_for('save_actions.copy_save', game_id=game.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="filename" value="{{ item.name }}"><select name="target_game" required><option value="">Copy to…</option>{% for target in copy_targets %}<option value="{{ target.id }}">{{ target.title }}</option>{% endfor %}</select><button type="submit">Copy</button></form>{% endif %}
+<form method="post" action="{{ url_for('save_actions.delete_save', game_id=game.id) }}" onsubmit="return confirm('Delete this save? A recovery copy will be available for 24 hours.');"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="filename" value="{{ item.name }}"><button type="submit" class="sb-danger">Delete</button></form></div></div>
+{% endfor %}</div>{% else %}<p class="sb-empty">No save files found yet.</p>{% endif %}
+{% if saves|length >= 1000 %}<p class="sb-small">Showing the first 1,000 entries.</p>{% endif %}
+</section>
+<section class="sb-save-panel" id="sb-snapshots" role="tabpanel" aria-labelledby="sb-tab-snapshots" hidden>
+<section class="sb-recovery-section"><h2>Recently recoverable</h2><p class="sb-small">Completed backup copies expire after 24 hours. Cleanup runs when Save Manager is opened.</p>
+{% if recoveries %}{% for item in recoveries %}<div class="sb-save-entry"><div><strong>{{ item.action }}</strong><small>{{ item.files|join(', ') }} · Expires {{ item.expires }}</small></div><form method="post" action="{{ url_for('save_actions.recover', game_id=game.id) }}" onsubmit="return confirm('Recover these files? Existing saves will be backed up first.');"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="token" value="{{ item.token }}"><button type="submit">Recover</button></form></div>{% endfor %}{% else %}<p class="sb-empty">No temporary recovery copies.</p>{% endif %}</section>
+<h2>Update snapshots</h2><p class="sb-small">Snapshots are retained separately from the active saves. Restoring copies snapshot files into current saves. Existing files receive 24-hour recovery copies.</p>
+{% if snapshots %}{% for snap in snapshots %}<div class="sb-v092-snapshot-row"><details class="sb-snapshot"><summary><strong>{{ snap.name }}</strong><small>{{ snap.modified }} · {{ snap.files|length }} top-level files</small></summary><form method="post" action="{{ url_for('save_actions.snapshot_restore', game_id=game.id) }}" onsubmit="return confirm('Restore supported saves from this snapshot? Current matching saves will have 24-hour recovery copies.');"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="snapshot" value="{{ snap.name }}"><button type="submit">Restore snapshot files</button></form>
+{% if snap.files %}<div class="sb-save-list">{% for item in snap.files %}<div class="sb-save-entry"><div><strong>{{ item.name }}</strong><small>{{ item.kind }}</small><form method="post" action="{{ url_for('save_actions.snapshot_restore', game_id=game.id) }}" onsubmit="return confirm('Restore this save from the snapshot?');"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="snapshot" value="{{ snap.name }}"><input type="hidden" name="filename" value="{{ item.name }}"><button type="submit">Restore file</button></form></div><div class="sb-save-meta">{{ item.size }}<small>{{ item.modified }}</small></div></div>{% endfor %}</div>{% else %}<p class="sb-small">No top-level save files (snapshot metadata may be nested).</p>{% endif %}</details><div class="sb-v092-snapshot-actions">
+  <a class="sb-v092-snapshot-btn" href="{{ url_for('storage.download_snapshot', game_id=game.id, label=snap.name) }}">Export ZIP</a>
+  <form method="post" action="{{ url_for('storage.delete_snapshot', game_id=game.id, label=snap.name) }}" onsubmit="return sbConfirmSnapshotDelete(this);">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <input type="hidden" name="confirm" value="">
+    <button type="submit" class="sb-v092-snapshot-btn sb-v092-danger">Delete</button>
+  </form>
+</div></div>{% endfor %}
+{% else %}<p class="sb-empty">No update snapshots yet.</p>{% endif %}
+<!-- v0.9.2 snapshot import -->
+<form method="post" enctype="multipart/form-data" action="{{ url_for('snapshot_import.import_snapshot', game_id=game.id) }}" class="sb-snapshot-import">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <label>Import snapshot ZIP <input name="snapshot" type="file" accept=".zip,application/zip" required></label>
+  <label class="sb-small"><input type="checkbox" name="acknowledge" value="yes" required> I trust this snapshot archive. Importing does not restore active saves.</label>
+  <button type="submit">Import snapshot</button>
+</form>
+
+</section>
+
+{% endif %}
+</main>
+<script src="{{ url_for('static', filename='save_manager.js') }}" defer></script>
+
+<!-- sb-v092-snapshot-actions -->
+<style>
+.sb-v092-snapshot-row {display:flex; align-items:flex-start; flex-wrap:wrap; gap:12px; border-bottom:1px solid var(--border,#3e4943); padding:12px 0;}
+.sb-v092-snapshot-row > details {flex:1 1 280px; min-width:0; border:0; padding:0; margin:0;}
+.sb-v092-snapshot-row > details > summary {cursor:pointer; overflow-wrap:anywhere;}
+.sb-v092-snapshot-actions {display:flex; gap:8px; align-items:center; flex:0 0 auto; flex-wrap:wrap;}
+.sb-v092-snapshot-actions form {margin:0;}
+.sb-v092-snapshot-btn {display:inline-block; font:inherit; font-size:.84rem; text-decoration:none; border:1px solid var(--border,#48534c); background:transparent; color:inherit; padding:8px 12px; border-radius:8px; cursor:pointer;}
+.sb-v092-snapshot-btn:hover {background:rgba(180,160,200,.12);}
+.sb-v092-danger {border-color:#935b65; color:#e3a7b3;}
+</style>
+<script>
+function sbConfirmSnapshotDelete(form) {
+  const typed = window.prompt('Permanently delete this snapshot?\nType delete to confirm.\nYou can use Export ZIP first if you want a copy.');
+  if (typed !== 'delete') return false;
+  form.elements.confirm.value = typed;
+  return true;
+}
+// Save Manager tabs are controlled by the existing save_manager.js.
+// Clicking the tab preserves its normal UI behavior.
+window.addEventListener('DOMContentLoaded', function () {
+  if (new URLSearchParams(location.search).get('tab') === 'snapshots') {
+    document.getElementById('sb-tab-snapshots')?.click();
+  }
+});
+</script>
+</body></html>
