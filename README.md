@@ -2,6 +2,8 @@
 
 **A self-hosted home for Ren’Py games.**
 
+[StoryBurrow library](docs/images/library.png)
+
 StoryBurrow runs Linux-compatible Ren’Py games on your own server and streams them to a browser on your local network. Your game installations, saves, and mods stay on the server instead of requiring separate game installations on each device.
 
 I built StoryBurrow to make it easier to pick up a visual novel from a PC, handheld, or phone: keep the library in one place, open a browser, and play.
@@ -9,11 +11,6 @@ I built StoryBurrow to make it easier to pick up a visual novel from a PC, handh
 Developed by **Bitwicket** · **Current development milestone: v0.9.2 (pre-1.0)**
 
 StoryBurrow does **not** include games or downloadable game content.
-
-
-<!-- When screenshots are ready, uncomment:
-![StoryBurrow library](docs/images/library.png)
--->
 
 ## What it does
 
@@ -48,8 +45,10 @@ A ✓ means implemented in the current development build; — means not yet impl
 | 24-hour recovery copies for supported save changes | ✓ |
 | Search and edit supported simple Ren’Py save variables | ✓ |
 | Command-line initial admin setup and emergency game controls | ✓ |
+| Improve Input Handling ('Controls' overlay in top left of screen for over-rides when needed and easy mobile access) | — |
 | Browser-based mod management | — |
 | Browser based Gallery for screenshots | — |
+
 
 ## Requirements
 
