@@ -2,9 +2,7 @@
 services:
   storyburrow:
     container_name: storyburrow
-    image: storyburrow:dev
-    build:
-      context: .
+    image: bitwicket/storyburrow:latest
     restart: unless-stopped
     init: true
     ports:
