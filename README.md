@@ -2,7 +2,7 @@
 
 **A self-hosted home for Ren’Py games.**
 
-[StoryBurrow library](docs/images/library.png)
+![StoryBurrow library](docs/images/library.png)
 
 StoryBurrow runs Linux-compatible Ren’Py games on your own server and streams them to a browser on your local network. Your game installations, saves, and mods stay on the server instead of requiring separate game installations on each device.
 
