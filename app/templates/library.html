@@ -11,6 +11,12 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='import_art_picker.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='edit_game.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='save_manager.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
+  <meta name="theme-color" content="#171d19">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
   <header class="site-header"><div class="brand">Story<span>Burrow</span></div><div class="header-actions"><span class="tagline">Your stories, one cozy place.</span><form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ logout_csrf }}"><button class="logout" type="submit">Log out</button></form></div></header>
