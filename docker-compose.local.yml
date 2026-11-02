@@ -2,7 +2,7 @@
 services:
   storyburrow:
     container_name: storyburrow
-    image: storyburrow:dev
+    image: storyburrow:devgit 
     build:
       context: .
       dockerfile: Dockerfile
@@ -35,12 +35,12 @@ services:
       # StoryBurrow UI
       STORYBURROW_HOST: ${STORYBURROW_HOST}
       PYTHONUNBUFFERED: "1"
-      volumes:
-        - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/games:/games
-        - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/saves:/saves
-        - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/data:/data
-        - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/logs:/logs
-        - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/certs:/certs
+    volumes:
+      - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/games:/games
+      - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/saves:/saves
+      - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/data:/data
+      - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/logs:/logs
+      - ${STORYBURROW_DATA_DIR:-./storyburrow-data}/certs:/certs
     devices:
       - /dev/dri:/dev/dri
     group_add:
