@@ -76,6 +76,8 @@ I want to make this bigger and even more usable. Feel free to recommend features
   - Adding RPGM for NLT games would be nice, but I need to do a lot of investigation on this. I know I would have to add a translation layer, and a good bit more logic to account for a whole new file structure. This is bottom of the list, but would be nice.
 - Multiple Users/Instances
   - Right now that would require a seperate conatiner on a different port for each user. I'm not sure how feasible it is, but I'll explore it with enough interest.
+- [itch.io](https://itch.io/) integration
+  - Itch has an API that supports game listing and downloading. Incorporate this to allow StoryBurrow to directly grab games and updates.
 - [GSL](https://gamestorylog.com/) Integration
   - Get ratings, tags, and artwork from the games and send reviews from StoryBurrow.
   - They don't currently have a public API, so there isn't much to do here, but I'm keeping it as a wishful thought!
