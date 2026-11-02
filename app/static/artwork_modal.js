@@ -44,9 +44,6 @@
         : "upload"
     );
 
-    // The existing VNDB script normally reveals this picker
-    // on the same button click. It remains responsible for
-    // loading and saving VNDB choices.
     if (picker) {
       picker.hidden = false;
     }
@@ -75,7 +72,6 @@
     button.addEventListener("click", closeModal);
   });
 
-  // Existing VNDB Cancel/Close buttons also close our modal.
   ["sb-art-close", "sb-art-cancel"].forEach(id => {
     document.getElementById(id)?.addEventListener(
       "click", closeModal
