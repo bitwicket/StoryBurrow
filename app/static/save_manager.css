@@ -1,14 +1,252 @@
-.sb-save-page{max-width:920px;margin:0 auto;padding:32px 24px 80px}.sb-save-page h1{margin:.5rem 0 1rem}.sb-back{color:var(--accent);text-decoration:none}.sb-save-intro,.sb-small{color:var(--muted);line-height:1.5}.sb-small{font-size:.9rem}.sb-save-tabs{display:flex;gap:8px;margin:28px 0 14px}.sb-save-tabs button{border:1px solid var(--border);background:var(--card);color:var(--text);padding:12px 20px;border-radius:10px;cursor:pointer;font:inherit}.sb-save-tabs button[aria-selected=true]{background:var(--accent);color:#16101b;border-color:var(--accent)}.sb-save-tabs span{opacity:.7;margin-left:6px}.sb-save-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px}.sb-save-panel[hidden]{display:none}.sb-save-panel h2{margin-top:0}.sb-save-list{display:flex;flex-direction:column;margin-top:18px}.sb-save-entry{display:flex;justify-content:space-between;gap:16px;align-items:center;border-top:1px solid var(--border);padding:15px 0;overflow-wrap:anywhere}.sb-save-entry strong{display:block;font-size:.95rem}.sb-save-entry small,.sb-snapshot small{display:block;color:var(--muted);margin-top:4px}.sb-save-meta{text-align:right;white-space:nowrap;font-size:.9rem}.sb-empty{padding:18px 0;color:var(--muted)}.sb-snapshot{border-top:1px solid var(--border);padding:16px 0}.sb-snapshot summary{cursor:pointer}.sb-snapshot summary strong{overflow-wrap:anywhere}@media(max-width:600px){.sb-save-entry{align-items:flex-start;flex-direction:column}.sb-save-meta{text-align:left}.sb-save-page{padding:24px 16px 64px}}
+.sb-save-page {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 32px 24px 80px
+}
 
-/* Equal-width actions on library cards. Scoped to Stage 4A markup. */
-.sb-card-secondary-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;width:100%;margin-top:10px}
-.sb-card-secondary-actions .sb-edit-link,.sb-card-secondary-actions .sb-edit-disabled{box-sizing:border-box;display:flex;align-items:center;justify-content:center;text-align:center;min-width:0;width:100%;margin:0;padding:10px 6px;text-decoration:none;border:1px solid var(--border);border-radius:8px;font-size:.88rem}
-.sb-card-secondary-actions .sb-edit-link{color:var(--text)}.sb-card-secondary-actions .sb-edit-link:hover{border-color:var(--accent);color:var(--accent)}.sb-card-secondary-actions .sb-edit-disabled{opacity:.55;cursor:not-allowed}
+.sb-save-page h1 {
+    margin: .5rem 0 1rem
+}
 
-/* Stage 4B: compact in-card save previews */
-.sb-save-thumb{width:144px;height:90px;flex:none;object-fit:cover;border:1px solid var(--border);border-radius:8px;background:var(--bg)}
-.sb-save-detail{flex:1;min-width:0}.sb-save-label{display:block;margin-top:4px;color:var(--text);font-size:.91rem}
-@media(max-width:600px){.sb-save-thumb{width:100%;height:auto;max-height:220px;object-fit:contain}.sb-rich-save{gap:10px}}
+.sb-back {
+    color: var(--accent);
+    text-decoration: none
+}
 
-/* Stage 4C contextual actions */
-.sb-save-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.sb-save-actions form,.sb-save-tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.sb-save-actions button,.sb-save-actions select,.sb-save-tools button,.sb-snapshot button,.sb-save-panel button{border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);padding:8px;cursor:pointer}.sb-save-actions a{color:var(--accent)}.sb-save-actions .sb-danger{color:#d65f5f}.sb-save-entry{flex-wrap:wrap}.sb-save-tools{padding:12px 0;border-bottom:1px solid var(--border)}
+.sb-save-intro,
+.sb-small {
+    color: var(--muted);
+    line-height: 1.5
+}
+
+.sb-small {
+    font-size: .9rem
+}
+
+.sb-save-tabs {
+    display: flex;
+    gap: 8px;
+    margin: 28px 0 14px
+}
+
+.sb-save-tabs button {
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font: inherit
+}
+
+.sb-save-tabs button[aria-selected=true] {
+    background: var(--accent);
+    color: #16101b;
+    border-color: var(--accent)
+}
+
+.sb-save-tabs span {
+    opacity: .7;
+    margin-left: 6px
+}
+
+.sb-save-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px
+}
+
+.sb-save-panel[hidden] {
+    display: none
+}
+
+.sb-save-panel h2 {
+    margin-top: 0
+}
+
+.sb-save-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: 18px
+}
+
+.sb-save-entry {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    padding: 15px 0;
+    overflow-wrap: anywhere
+}
+
+.sb-save-entry strong {
+    display: block;
+    font-size: .95rem
+}
+
+.sb-save-entry small,
+.sb-snapshot small {
+    display: block;
+    color: var(--muted);
+    margin-top: 4px
+}
+
+.sb-save-meta {
+    text-align: right;
+    white-space: nowrap;
+    font-size: .9rem
+}
+
+.sb-empty {
+    padding: 18px 0;
+    color: var(--muted)
+}
+
+.sb-snapshot {
+    border-top: 1px solid var(--border);
+    padding: 16px 0
+}
+
+.sb-snapshot summary {
+    cursor: pointer
+}
+
+.sb-snapshot summary strong {
+    overflow-wrap: anywhere
+}
+
+@media(max-width:600px) {
+    .sb-save-entry {
+        align-items: flex-start;
+        flex-direction: column
+    }
+
+    .sb-save-meta {
+        text-align: left
+    }
+
+    .sb-save-page {
+        padding: 24px 16px 64px
+    }
+}
+
+.sb-card-secondary-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px
+}
+
+.sb-card-secondary-actions .sb-edit-link,
+.sb-card-secondary-actions .sb-edit-disabled {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-width: 0;
+    width: 100%;
+    margin: 0;
+    padding: 10px 6px;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: .88rem
+}
+
+.sb-card-secondary-actions .sb-edit-link {
+    color: var(--text)
+}
+
+.sb-card-secondary-actions .sb-edit-link:hover {
+    border-color: var(--accent);
+    color: var(--accent)
+}
+
+.sb-card-secondary-actions .sb-edit-disabled {
+    opacity: .55;
+    cursor: not-allowed
+}
+
+.sb-save-thumb {
+    width: 144px;
+    height: 90px;
+    flex: none;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg)
+}
+
+.sb-save-detail {
+    flex: 1;
+    min-width: 0
+}
+
+.sb-save-label {
+    display: block;
+    margin-top: 4px;
+    color: var(--text);
+    font-size: .91rem
+}
+
+@media(max-width:600px) {
+    .sb-save-thumb {
+        width: 100%;
+        height: auto;
+        max-height: 220px;
+        object-fit: contain
+    }
+
+    .sb-rich-save {
+        gap: 10px
+    }
+}
+
+.sb-save-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center
+}
+
+.sb-save-actions form,
+.sb-save-tools {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap
+}
+
+.sb-save-actions button,
+.sb-save-actions select,
+.sb-save-tools button,
+.sb-snapshot button,
+.sb-save-panel button {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 8px;
+    cursor: pointer
+}
+
+.sb-save-actions a {
+    color: var(--accent)
+}
+
+.sb-save-actions .sb-danger {
+    color: #d65f5f
+}
+
+.sb-save-entry {
+    flex-wrap: wrap
+}
+
+.sb-save-tools {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border)
+}
