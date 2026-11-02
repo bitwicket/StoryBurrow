@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Welcome to StoryBurrow</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+.sb-onboard{max-width:440px;margin:9vh auto;padding:30px;border:1px solid var(--border,#35443b);border-radius:18px;background:var(--card,#202b25)}
+.sb-onboard form{display:grid;gap:14px}.sb-onboard label{display:grid;gap:6px}.sb-onboard input{width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid var(--border,#576b5d);background:var(--bg,#131e17);color:var(--text,#fff)}
+.sb-onboard button{padding:12px;border:0;border-radius:8px;background:var(--accent,#6da883);color:#08170f;font-weight:700;cursor:pointer}.sb-onboard .error{color:#f6acac}
+</style>
+</head><body>
+<header class="site-header"><div class="brand">Story<span>Burrow</span></div><span class="tagline">Your stories, one cozy place.</span></header>
+<main class="sb-onboard">
+<p class="eyebrow">FIRST LAUNCH</p><h1>Welcome to StoryBurrow</h1>
+<p>Create your administrator account to get started. Setup is available only until the first account is created.</p>
+{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+<form method="post" action="{{ url_for('first_run.setup') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf }}">
+<label>Username <input name="username" autocomplete="username" maxlength="40" required></label>
+<label>Password <input type="password" name="password" autocomplete="new-password" minlength="6" required></label>
+<label>Confirm password <input type="password" name="confirm_password" autocomplete="new-password" minlength="6" required></label>
+<button type="submit">Create administrator account</button>
+</form>
+</main></body></html>

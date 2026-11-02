@@ -54,11 +54,17 @@ I want to make this bigger and even more usable. Feel free to recommend features
   - You can remove games while retaining saves and metadata, or forget the game entirely like it had never been installed before. Both choices are clearly labeled and have different 'type to confirm' phrases.
 - Installation IDs
   - Sometimes you want to have 2 version of a game running parallel instead of updating. Import does not check existing installs and saves are tied to the install's UUID, so they won't cross wires.
+- Improved Start Up Process
+  - First launch redirects to `/setup` to make the admin account. This page is blocked from subsequent creations for now.
+  - Reset password via CLI with:
+ ```bash
+docker exec -it -u ubuntu storyburrow /opt/storyburrow-venv/bin/python /app/authctl.py reset %USERNAME%
+```
+ 
 
  ### Planned Features:
 
-- Improved startup process. 
-  - I don't like running docker exec command after the container goes up, but I don't want to persist passwords in .env or anywhere else.
+:white_check_mark: Improved startup process. 
 - Add Game Via Link
   - Directly downloading a game from a patreon or itch.io link would be great. Its on the short list for a 1.0 release.
 - Art Manger
@@ -134,20 +140,9 @@ docker compose -f docker-compose.local.yml up -d --build
 
 Only the StoryBurrow HTTPS web port (container `2500`) needs to be published. Selkies (`6080`) is proxied internally through Caddy; **do not publish `6080` separately**.
 
-### 3. Create the administrator account
+### 3. Open the library and Create the administrator account
 
-On a fresh installation, the browser will indicate that administrator setup is required. Run this command on the Docker host if you didn't change anything:
-
-```bash
-docker exec -it -u ubuntu storyburrow /opt/storyburrow-venv/bin/python /app/authctl.py init admin
-```
-If you did change the container name, reference it instead of `storyburrow` in the above command. If you would like a username other than `admin` make that change as well.
-
-This initializes the administrator account named `admin` and prompts for its password interactively. **Do not put a password on the command line or in Compose.** The account data is stored under `/data/auth` and should persist through container rebuilds as long as `/data` is mounted persistently.
-
-### 4. Open the library
-
-Visit `https://<your-server-address>:<STORYBURROW_PORT>` (normally port `2500`), accept or trust the local HTTPS certificate as appropriate for your own network, and sign in with the administrator credentials you just created.
+Visit `https://<your-server-address>:<STORYBURROW_PORT>` (normally port `2500`), accept or trust the local HTTPS certificate, its self-signed in Caddy. Your first launch will be redirected to the `/setup` page to create your admin account.
 
 Select **Add game** to import a Linux-compatible Ren’Py game. Only import games that you are permitted to use.
 

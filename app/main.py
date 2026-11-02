@@ -16,6 +16,8 @@ from flask import Flask, abort, redirect, render_template, request, send_file, u
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
 app = Flask(__name__)
+from first_run import bp as first_run_bp
+app.register_blueprint(first_run_bp)
 from import_routes import bp as import_bp
 app.register_blueprint(import_bp)
 from import_art_routes import bp as import_art_bp
@@ -79,10 +81,17 @@ def protect():
         request.max_content_length = 20 * 1024**2  # 16 MiB chunk + headroom
     elif request.endpoint in ('imports.upload_complete', 'imports.upload_delete', 'imports.import_discard', 'imports.import_vndb'):
         request.max_content_length = 1024 * 1024
-    if request.endpoint in ('health', 'login', 'static', 'stream_auth'):
+    if request.endpoint == 'first_run.setup':
+        return None
+    if request.endpoint in ('health', 'login', 'static'):
         return None
     if not has_admin():
-        return render_template('setup_needed.html'), 503
+        return redirect(url_for('first_run.setup'), code=303)
+    from auth_state import revision
+    if session.get('user') and session.get('auth_revision', 'legacy') != revision(session['user']):
+        session.clear()
+    if request.endpoint == 'stream_auth':
+        return None
     if not session.get('user'):
         if request.path.startswith('/covers/'):
             abort(401)
@@ -93,7 +102,7 @@ def protect():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if not has_admin():
-        return render_template('setup_needed.html'), 503
+        return redirect(url_for('first_run.setup'), code=303)
     if session.get('user'):
         return redirect(url_for('library'))
     error = None
@@ -107,6 +116,8 @@ def login():
         if row and check_password_hash(row[0], password):
             session.clear()
             session['user'] = username
+            from auth_state import revision
+            session['auth_revision'] = revision(username)
             session.permanent = True
             return redirect(safe_next(request.form.get('next')), code=303)
         error = 'Invalid username or password.'
