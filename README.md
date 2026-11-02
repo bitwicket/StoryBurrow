@@ -127,7 +127,7 @@ docker compose up -d
 #### Local Build
 
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.local.yml up -d --build
 ```
 
 Only the StoryBurrow HTTPS web port (container `2500`) needs to be published. Selkies (`6080`) is proxied internally through Caddy; **do not publish `6080` separately**.
