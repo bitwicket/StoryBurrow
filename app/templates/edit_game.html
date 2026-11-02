@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='edit_game.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='art_picker.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='uninstall.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='artwork_modal.css') }}">
 </head>
 <body>
 <header class="site-header"><div class="brand">Story<span>Burrow</span></div><span class="tagline">Your stories, one cozy place.</span></header>
@@ -23,11 +24,23 @@
       {% else %}
         <div class="sb-edit-placeholder" aria-label="No artwork available">✦</div>
       {% endif %}
-      <p class="sb-edit-note">{% if record and game.vndb_id %}<button type="button" id="sb-art-open" class="sb-art-open">Change artwork</button>{% else %}VNDB artwork selection requires a catalog-managed game with a confirmed VNDB match.{% endif %}</p>
+      <p class="sb-edit-note">
+        <button type="button" id="sb-art-open" class="sb-art-open">
+          <svg xmlns="http://www.w3.org/2000/svg"
+              width="18" height="18" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor"
+              stroke-width="1.8" stroke-linecap="round"
+              stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="m21 15-5-5L5 21"/>
+          </svg>
+          <span>Change artwork</span>
+        </button>
+      </p>
     </div>
     <div class="sb-edit-fields">
       {% if record %}
-
         <form method="post" action="{{ url_for('edits.edit_game', game_id=game.id) }}">
           <input type="hidden" name="csrf_token" value="{{ csrf }}">
           <label for="sb-title">Display title</label>
@@ -55,22 +68,162 @@
       {% endif %}
     </div>
   </section>
-  {% if record and game.vndb_id %}
-  <section class="sb-art-picker" id="sb-art-picker" hidden data-url="{{ url_for('edits.artwork_options', game_id=game.id) }}" data-preference-url="{{ url_for('edits.artwork_preferences', game_id=game.id) }}" data-csrf="{{ csrf }}">
-    <div class="sb-art-header"><h2>Choose artwork</h2><button type="button" class="sb-art-close" id="sb-art-close">Close</button></div>
-    <label class="sb-art-preference"><input id="sb-art-explicit" type="checkbox"> Allow Explicit Images from VNDB</label>
-    <p class="sb-edit-note">This setting is saved for future visits. Changing it never replaces existing artwork.</p>
-    <p id="sb-art-feedback" role="status" aria-live="polite">Loading available artwork…</p>
-    <div class="sb-art-grid" id="sb-art-grid" role="group" aria-label="VNDB artwork choices"></div>
-    <div class="sb-art-actions"><button class="play" type="button" id="sb-art-save" disabled>Save selected artwork</button><button type="button" id="sb-art-cancel" class="sb-art-close">Cancel</button></div>
-  </section>
-  {% endif %}
+  <!-- art modal -->
+<div class="sb-art-modal" id="sb-art-modal" hidden>
+  <div class="sb-art-dialog"
+       role="dialog"
+       aria-modal="true"
+       aria-labelledby="sb-art-modal-title"
+       tabindex="-1">
+    <div class="sb-art-modal-heading">
+      <div>
+        <p class="eyebrow">GAME ARTWORK</p>
+        <h2 id="sb-art-modal-title">Change artwork</h2>
+      </div>
+      <button type="button" id="sb-art-modal-close"
+              class="sb-art-close">Close</button>
+    </div>
+    <div class="sb-art-tabs" role="tablist"
+         aria-label="Artwork source">
+      {% if record and game.vndb_id %}
+      <button type="button" data-art-tab="vndb"
+              role="tab" aria-selected="true">
+        VNDB
+      </button>
+      {% endif %}
+      <button type="button" data-art-tab="upload"
+              role="tab" aria-selected="false">
+        Upload image
+      </button>
+      <button type="button" data-art-tab="url"
+              role="tab" aria-selected="false">
+        Image URL
+      </button>
+    </div>
+    {% if record and game.vndb_id %}
+    <div class="sb-art-tab-panel" data-art-panel="vndb">
+      <section class="sb-art-picker"
+               id="sb-art-picker"
+               hidden
+               data-url="{{ url_for('edits.artwork_options', game_id=game.id) }}"
+               data-preference-url="{{ url_for('edits.artwork_preferences', game_id=game.id) }}"
+               data-csrf="{{ csrf }}">
+        <label class="sb-art-preference">
+          <input id="sb-art-explicit" type="checkbox">
+          Allow Explicit Images from VNDB
+        </label>
+        <p class="sb-edit-note">
+          This preference is saved for future visits.
+        </p>
+        <p id="sb-art-feedback" role="status" aria-live="polite">
+          Loading artwork…
+        </p>
+        <div class="sb-art-grid"
+             id="sb-art-grid"
+             role="group"
+             aria-label="VNDB artwork choices"></div>
+
+        <div class="sb-art-actions">
+          <button class="play" type="button"
+                  id="sb-art-save" disabled>
+            Save selected artwork
+          </button>
+          <button type="button" id="sb-art-cancel"
+                  class="sb-art-close">
+            Cancel
+          </button>
+        </div>
+      </section>
+    </div>
+    {% endif %}
+    <div class="sb-art-tab-panel" data-art-panel="upload" hidden>
+      <h3>Upload a cover</h3>
+      <p class="sb-edit-note">
+        Select an image from your device.
+      </p>
+      <form method="post"
+            enctype="multipart/form-data"
+            action="{{ url_for('custom_art.set_custom_artwork', game_id=game.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="source" value="file">
+        <label for="sb-custom-file">Choose image</label>
+        <input id="sb-custom-file"
+               type="file"
+               name="image"
+               accept=".png,.jpg,.jpeg,.webp,.avif,image/png,image/jpeg,image/webp,image/avif"
+               required>
+        <div class="sb-art-preview" id="sb-upload-preview" hidden>
+          <img alt="Selected cover preview">
+        </div>
+        <div class="sb-art-modal-actions">
+          <button type="button" class="sb-art-modal-cancel">
+            Cancel
+          </button>
+          <button class="play" type="submit">
+            Use uploaded artwork
+          </button>
+        </div>
+      </form>
+    </div>
+    <div class="sb-art-tab-panel" data-art-panel="url" hidden>
+      <h3>Import cover from URL</h3>
+      <p class="sb-edit-note">
+        Enter a direct HTTPS image URL.
+      </p>
+      <form method="post"
+            action="{{ url_for('custom_art.set_custom_artwork', game_id=game.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <input type="hidden" name="source" value="url">
+        <label for="sb-custom-url">Image URL</label>
+        <input id="sb-custom-url"
+               type="url"
+               name="image_url"
+               placeholder="https://example.com/cover.png"
+               maxlength="2048"
+               required>
+        <div class="sb-art-modal-actions">
+          <button type="button" class="sb-art-modal-cancel">
+            Cancel
+          </button>
+          <button class="play" type="submit">
+            Use image URL
+          </button>
+        </div>
+      </form>
+    </div>
+    {% if game.cover == 'custom-artwork' %}
+    <div class="sb-art-remove">
+      <form method="post"
+            action="{{ url_for('custom_art.remove_custom_artwork', game_id=game.id) }}"
+            onsubmit="return confirm('Remove the custom cover and restore previous artwork?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <button type="submit" class="sb-art-close">
+          Remove custom cover
+        </button>
+      </form>
+    </div>
+    {% endif %}
+    <p class="sb-edit-note">
+      PNG, JPEG, WebP, or AVIF · Maximum 12 MB.
+      Custom images take priority over VNDB artwork.
+    </p>
+  </div>
+</div> 
   {% if record %}
   <section class="sb-edit-future" aria-label="Update game">
     <h2>Update game</h2>
     <p>Upload a replacement build for this installation. Saves are snapshotted, and the previous game files are retained for rollback.</p>
     <a class="play" href="{{ url_for('updates.update_page', game_id=game.id) }}">Update Game</a>
   </section>
+  {% if record %}
+  <section class="sb-edit-future" aria-label="Previous game builds">
+    <h2>Previous builds</h2>
+    <p>Roll back to a retained build or remove it early. New backups automatically expire after 48 hours.</p>
+    <a class="play" href="{{ url_for('build_backups.page', game_id=game.id) }}">
+      Manage previous builds
+    </a>
+  </section>
+  {% endif %}
   <section class="sb-edit-future sb-uninstall" aria-label="Uninstall game">
     <h2>Uninstall game</h2>
     <p>Remove this installation from StoryBurrow and delete its game files. <strong>Saved games in /saves are preserved.</strong> This cannot be undone.</p>
@@ -103,9 +256,10 @@
     </form>
   </section>
   {% endif %}
-
-{% if record %}<section class="sb-edit-future" aria-label="Previous game builds"><h2>Previous builds</h2><p>Roll back to a retained build or remove it early. New backups automatically expire after 48 hours.</p><a class="play" href="{{ url_for('build_backups.page', game_id=game.id) }}">Manage previous builds</a></section>{% endif %}
 </main>
-{% if record and game.vndb_id %}<script src="{{ url_for('static', filename='art_picker.js') }}" defer></script>{% endif %}
+{% if record and game.vndb_id %}
+<script src="{{ url_for('static', filename='art_picker.js') }}" defer></script>
+{% endif %}
+<script src="{{ url_for('static', filename='artwork_modal.js') }}" defer></script>
 </body>
 </html>

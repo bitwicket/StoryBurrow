@@ -20,6 +20,7 @@ RUN apt-get update && \
     python3 -m venv /opt/storyburrow-venv && \
     /opt/storyburrow-venv/bin/pip install \
       --no-cache-dir \
+      Pillow \
       'Flask==3.1.2' \
       'ecdsa==0.19.1' && \
     rm -rf /var/lib/apt/lists/*

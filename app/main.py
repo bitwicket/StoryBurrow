@@ -46,35 +46,31 @@ COVERS = ('cover.webp', 'cover.png', 'cover.jpg', 'poster.webp', 'poster.png', '
 INPUT_LOCK = threading.Lock()
 WINDOW_PATTERN = re.compile(r'^\s*(0x[0-9a-fA-F]+)\s+\"([^\"]*)\".*?\s+(\d+)x(\d+)[+-]')
 
-
 def db_connect():
     conn = sqlite3.connect(DB_PATH, timeout=5)
     conn.execute('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password_hash TEXT NOT NULL)')
     return conn
 
-
 def has_admin():
     with db_connect() as conn:
         return conn.execute('SELECT 1 FROM users LIMIT 1').fetchone() is not None
-
 
 def csrf_token():
     if '_csrf' not in session:
         session['_csrf'] = secrets.token_urlsafe(32)
     return session['_csrf']
 
-
 def valid_csrf():
     return hmac.compare_digest(request.form.get('csrf_token', ''), session.get('_csrf', 'not-set'))
-
 
 def safe_next(value):
     parsed = urlsplit(value or '')
     return value if value and value.startswith('/') and not value.startswith('//') and not parsed.scheme and not parsed.netloc else url_for('library')
 
-
 @app.before_request
 def protect():
+    if request.endpoint == 'custom_art.set_custom_artwork':
+        request.max_content_length = 13 * 1024 * 1024
     if request.endpoint == 'imports.upload_create':
         request.max_content_length = 4 * 1024**2  # JSON manifest, up to 4 MiB
     elif request.endpoint == 'imports.upload_chunk':
@@ -97,7 +93,6 @@ def protect():
             abort(401)
         return redirect(url_for('login', next=request.path if request.method == 'GET' else '/'))
     return None
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -123,14 +118,12 @@ def login():
         error = 'Invalid username or password.'
     return render_template('login.html', error=error, csrf=csrf_token(), next=safe_next(request.values.get('next')))
 
-
 @app.post('/logout')
 def logout():
     if not valid_csrf():
         abort(400)
     session.clear()
     return redirect(url_for('login'), code=303)
-
 
 def manager_command(action, **kwargs):
     payload = json.dumps({'action': action, **kwargs}).encode() + b'\n'
@@ -151,7 +144,6 @@ def manager_command(action, **kwargs):
         app.logger.warning('Game manager unavailable: %s', exc)
         return {'ok': False, 'error': 'Game manager unavailable'}
 
-
 def installed_games():
     result = manager_command('list')
     if not result.get('ok'):
@@ -159,7 +151,6 @@ def installed_games():
     games = []
     for item in result.get('games', []):
         game_id = item.get('id', '')
-        # Name resolution and validation happen in the game manager; also guard cover paths here.
         directory = (GAMES / game_id).resolve()
         if directory.parent != GAMES or not directory.is_dir():
             continue
@@ -186,10 +177,13 @@ def installed_games():
         for game in games:
             if cover_for_directory(game['id']):
                 game['cover'] = 'cached-artwork'
+        from custom_artwork import current_override
+        for game in games: 
+            if current_override(game['id']):
+                game['cover'] = 'custom-artwork'
     except Exception:
         app.logger.exception('Could not load cached artwork overlay')
     return games, None
-
 
 @app.get('/')
 def library():
@@ -197,7 +191,6 @@ def library():
     status = manager_command('status')
     return render_template('library.html', games=games, error=error,
                            status=status, csrf=TOKENS.dumps('play'), logout_csrf=csrf_token(), player_url=PLAYER_URL, import_csrf=csrf_token())
-
 
 @app.post('/play/<game_id>')
 def play(game_id):
@@ -232,7 +225,6 @@ def stop_game():
         ), 409
     return redirect(url_for('library'), code=303)
 
-
 @app.get('/player')
 def player():
     status = manager_command('status')
@@ -242,8 +234,6 @@ def player():
     if not status.get('running'):
         return redirect(url_for('library'))
     return render_template('player.html', game=status.get('game'), input_csrf=csrf_token())
-
-
 
 def game_window():
     #Locate visible game window
@@ -259,15 +249,12 @@ def game_window():
         raise ValueError(f'Expected one game window; found {len(windows)}')
     return windows[0], env
 
-
 def x11_key(env, key):
     subprocess.run(['xdotool', 'key', '--clearmodifiers', key], env=env,
                    check=True, capture_output=True, timeout=4)
 
-
 @app.post('/api/player/input')
 def player_input():
-    # protect() enforces login; an additional CSRF check protects this state-changing API.
     provided = request.headers.get('X-CSRF-Token', '')
     if not hmac.compare_digest(provided, session.get('_csrf', 'not-set')):
         abort(400, 'Invalid form token')
@@ -302,7 +289,7 @@ def player_input():
         elif action == 'forward':
             x11_key(env, 'Next')
         elif value == '':
-            # Accept Ren'Py's default name unchanged.
+            # Accept default name unchanged.
             x11_key(env, 'Return')
         else:
             # Standard Ren'Py input does not reliably implement Ctrl+A.
@@ -326,6 +313,10 @@ def cover(game_id):
     games, error = installed_games()
     if error or game_id not in {game['id'] for game in games}:
         abort(404)
+    from custom_artwork import current_override
+    custom = current_override(game_id)
+    if custom:
+        return send_file(custom, max_age=0)
     from artwork import cover_for_directory
     cached = cover_for_directory(game_id)
     if cached:
@@ -337,21 +328,17 @@ def cover(game_id):
             return send_file(candidate, max_age=300)
     abort(404)
 
-
 @app.get('/health')
 def health():
     return {'status': 'ok'}
 
-
 @app.get('/internal/stream-auth')
 def stream_auth():
-    # This endpoint must be reachable ONLY through the internal Caddy auth subrequest.
     if not has_admin():
         return '', 503
     if not session.get('user'):
         return '', 401
     return '', 204
-
 
 @app.get('/api/session')
 def session_status():
@@ -391,6 +378,9 @@ app.register_blueprint(snapshot_import_bp)
 
 from build_backup_routes import bp as build_backup_bp, cleanup_expired
 app.register_blueprint(build_backup_bp)
+
+from custom_artwork import bp as custom_art_bp
+app.register_blueprint(custom_art_bp)
 
 @app.before_request
 def _storyburrow_build_cleanup():
