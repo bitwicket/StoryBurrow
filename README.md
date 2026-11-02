@@ -29,6 +29,9 @@ A managed installation has its own save namespace, separate from its game files.
 - iPhone using Safari
   - Working Well as a [homepage webapp](https://support.apple.com/guide/iphone/open-as-web-app-iphea86e5236/ios)
   - Safari in landscape is not friendly at all. The browser tabs and address bar stay up giving you next to no playing space.
+
+Please add any clients you test to the [discussion here!](https://github.com/bitwicket/StoryBurrow/discussions/3)
+
 ## Features and roadmap
 
 I want to make this bigger and even more usable. Feel free to recommend features that you would use in addition to what is below!
