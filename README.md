@@ -54,6 +54,8 @@ I want to make this bigger and even more usable. Feel free to recommend features
   - You can remove games while retaining saves and metadata, or forget the game entirely like it had never been installed before. Both choices are clearly labeled and have different 'type to confirm' phrases.
 - Installation IDs
   - Sometimes you want to have 2 version of a game running parallel instead of updating. Import does not check existing installs and saves are tied to the install's UUID, so they won't cross wires.
+- Art Manger
+  - You can upload a cover yourself now. Over ruling any previous selections. Options: File from Client, URL, VNDB picker.
 - Improved Start Up Process
   - First launch redirects to `/setup` to make the admin account. This page is blocked from subsequent creations for now.
   - Reset password via CLI with:
@@ -64,11 +66,12 @@ docker exec -it -u ubuntu storyburrow /opt/storyburrow-venv/bin/python /app/auth
 
  ### Planned Features:
 
-:white_check_mark: Improved startup process. 
+:white_check_mark: Improved startup process.
+
+:white_check_mark: Art Manager
 - Add Game Via Link
   - Directly downloading a game from a patreon or itch.io link would be great. Its on the short list for a 1.0 release.
-- Art Manger
-  - The option to upload a cover yourself. The backbone is there, drop a file named `cover.png` in the game directory and it will be used, overriding a VNDB selection.
+
 -  Mod Management
     - Add a mod or patch from the UI and persist the mod in the /mods/game-id structure so it can be easily reapplied to new versions.
     - Possibly a seperate holding pattern for [URM](https://0x52.dev/mods/Universal-Ren-Py-Mod-1000) and an option to install it per game.
