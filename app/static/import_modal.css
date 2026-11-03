@@ -131,3 +131,49 @@
         padding: calc(18px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom))
     }
 }
+.sb-url-panel[hidden] {
+  display: none !important;
+}
+
+.sb-url-panel {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.sb-url-panel label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.sb-url-panel input[type="url"] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.sb-url-panel .sb-import-actions {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sb-url-panel .play {
+  width: auto;
+}
+
+@media (max-width: 650px) {
+  .sb-url-panel .sb-import-actions button {
+    width: 100%;
+  }
+}

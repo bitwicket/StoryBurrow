@@ -382,6 +382,9 @@ app.register_blueprint(build_backup_bp)
 from custom_artwork import bp as custom_art_bp
 app.register_blueprint(custom_art_bp)
 
+from import_url_routes import bp as import_url_bp
+app.register_blueprint(import_url_bp)
+
 @app.before_request
 def _storyburrow_build_cleanup():
     # On-demand expiration; never acts while any game is running.

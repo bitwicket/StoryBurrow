@@ -1,12 +1,36 @@
 <div id="sb-import" class="sb-import-backdrop" data-csrf="{{ import_csrf }}" hidden>
   <section class="sb-import-dialog" role="dialog" aria-modal="true" aria-labelledby="sb-import-title">
     <div class="sb-import-heading"><h2 id="sb-import-title">Add a game</h2><button type="button" id="sb-import-close" aria-label="Close import">×</button></div>
-    <p class="sb-import-hint">Upload a Ren'Py ZIP or extracted folder. Review a Ren'Py game before installing.</p>
+    <p class="sb-import-hint">Upload a Ren'Py ZIP, choose an extracted folder, or download a ZIP directly to the server. Review the game before installing.</p>
     <div id="sb-import-pick">
       <div class="sb-import-drop" id="sb-import-drop">Drop a ZIP here, or choose a file or folder below.</div>
       <div class="sb-import-actions">
         <button type="button" id="sb-pick-zip">Choose ZIP</button>
         <button type="button" id="sb-pick-folder">Choose Folder</button>
+        <button type="button" id="sb-pick-url">Import from URL</button>
+      </div>
+      <div id="sb-url-panel" class="sb-url-panel" hidden>
+        <label for="sb-url-input">Direct download URL</label>
+        <input
+          id="sb-url-input"
+          type="url"
+          placeholder="https://example.com/game.zip"
+          autocomplete="off"
+          maxlength="8192"
+        >
+        <p class="sb-import-hint">
+          StoryBurrow downloads the ZIP directly to the server.
+          Public HTTPS links only; authentication-required pages
+          and GOG installers aren't supported yet.
+        </p>
+        <div class="sb-import-actions">
+          <button type="button" class="play" id="sb-url-start">
+            Download and inspect
+          </button>
+          <button type="button" id="sb-url-cancel" hidden>
+            Cancel download
+          </button>
+        </div>
       </div>
       <input id="sb-zip-input" type="file" accept=".zip,application/zip" hidden>
       <input id="sb-folder-input" type="file" webkitdirectory multiple hidden>

@@ -7,7 +7,6 @@ import shutil
 import threading
 import time
 from pathlib import Path
-
 from flask import Blueprint, abort, current_app, jsonify, request, session
 from importer.inspector import InspectionError, inspect, normalize_path
 from importer.vndb import VNDBError, search_vn
@@ -31,10 +30,8 @@ def require_csrf():
     if not hmac.compare_digest(request.headers.get('X-CSRF-Token', ''), session.get('_csrf', 'not-set')):
         abort(400, 'Invalid CSRF token')
 
-
 def problem(message, code=400):
     return jsonify(ok=False, error=message), code
-
 
 def cleanup():
     ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -46,7 +43,6 @@ def cleanup():
                     shutil.rmtree(p)
             except OSError:
                 current_app.logger.exception('Could not remove expired import preview')
-
 
 def get_upload(token):
     if not TOKEN.fullmatch(token):
@@ -60,18 +56,15 @@ def get_upload(token):
         abort(404)
     return root, data
 
-
 def save_state(root, state):
     tmp = root / 'state.tmp'
     tmp.write_text(json.dumps(state, separators=(',', ':')), encoding='utf-8')
     os.replace(tmp, root / 'state.json')
     root.touch()
 
-
 def public_state(token, state):
     return {'upload_id': token, 'kind': state['kind'], 'received_bytes': state['received'],
             'total_bytes': state['total'], 'offsets': state['offsets'], 'status': state['status']}
-
 
 @bp.post('/api/import/uploads')
 def upload_create():
@@ -111,13 +104,11 @@ def upload_create():
         save_state(root, state)
     return jsonify(ok=True, **public_state(token, state))
 
-
 @bp.get('/api/import/uploads/<token>')
 def upload_status(token):
     with LOCK:
         _, state = get_upload(token)
         return jsonify(ok=True, **public_state(token, state))
-
 
 @bp.put('/api/import/uploads/<token>/chunk/<int:index>')
 def upload_chunk(token, index):
@@ -152,7 +143,6 @@ def upload_chunk(token, index):
         state['received'] += len(body)
         save_state(root, state)
         return jsonify(ok=True, received_bytes=state['received'], offset=state['offsets'][index])
-
 
 @bp.post('/api/import/uploads/<token>/complete')
 def upload_complete(token):
@@ -191,18 +181,16 @@ def upload_complete(token):
             current_app.logger.warning('Import inspection failed: %s', exc)
             return problem(str(exc))
 
-
 @bp.delete('/api/import/uploads/<token>')
 def upload_delete(token):
     require_csrf()
     with LOCK:
         root, state = get_upload(token)
-        if state['status'] in ('installing', 'installed'):
+        if state['status'] in ('downloading', 'inspecting', 'installing', 'installed'):
             return problem('Cannot discard installation in progress', 409)
         shutil.rmtree(root, ignore_errors=True)
         delete_review(token, session['user'])
     return jsonify(ok=True)
-
 
 @bp.post('/api/import/vndb')
 def import_vndb():
@@ -230,7 +218,6 @@ def import_discard():
         shutil.rmtree(root, ignore_errors=True)
         delete_review(token, session['user'])
     return jsonify(ok=True)
-
 
 @bp.post('/api/import/uploads/<token>/review')
 def upload_review(token):
@@ -274,7 +261,6 @@ def upload_review(token):
         save_state(root, state)
         return jsonify(ok=True, review=saved, installation_enabled=False)
 
-
 @bp.post('/api/import/uploads/<token>/install')
 def install_game(token):
     require_csrf()
@@ -297,7 +283,6 @@ def install_game(token):
         threading.Thread(target=_install_worker,
                          args=(token, session['user'], folder_name), daemon=True).start()
         return jsonify(ok=True, status='installing', upload_id=token), 202
-
 
 def _install_worker(token, owner, folder_name):
     pending = None
@@ -397,7 +382,6 @@ def _install_worker(token, owner, folder_name):
                     import logging
                     logging.getLogger('storyburrow.import').exception(
                         'Could not clear failed routing registration')
-
             try:
                 shutil.rmtree(destination)
             except OSError:
@@ -413,7 +397,6 @@ def _install_worker(token, owner, folder_name):
     finally:
         if pending is not None:
             shutil.rmtree(pending, ignore_errors=True)
-
 
 @bp.get('/api/import/uploads/<token>/installation')
 def installation_status(token):

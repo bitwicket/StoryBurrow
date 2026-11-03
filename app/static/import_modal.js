@@ -3,6 +3,7 @@
   const $=id=>document.getElementById(id), csrf=root.dataset.csrf;
   const CHUNK=16*1024*1024;
   let preview=null, active=null, busy=false, installing=false, selectedVN=null, cancelRequested=false;
+  let urlDownloadActive = false;
   const feedback=t=>{$('sb-import-feedback').textContent=t};
   const showReview=show=>{$('sb-import-pick').hidden=show;$('sb-import-review').hidden=!show};
   async function response(r){const type=r.headers.get('content-type')||'';if(!type.includes('application/json'))throw Error(`HTTP ${r.status}: unexpected server response`);const obj=await r.json();if(!r.ok||!obj.ok)throw Error(obj.error||`HTTP ${r.status}`);return obj}
@@ -21,11 +22,27 @@
     }
     const progressEl=$('sb-upload-progress');if(progressEl){progressEl.value=0;progressEl.hidden=true;}
     if($('sb-install-game'))$('sb-install-game').disabled=true;
+    $('sb-url-panel').hidden = true;
+    $('sb-url-input').value = '';
+    $('sb-url-start').disabled = false;
+    $('sb-url-cancel').hidden = true;
+    urlDownloadActive = false;
   }
-  async function close(){
-    if(installing){feedback('Installation is running. Keep this window open.');return}
-    if(busy){cancelRequested=true;feedback('Stopping after current chunk…');return}
-    await discard();root.hidden=true;resetView();
+  async function close() {
+    if (installing) {
+      feedback('Installation is running. Keep this window open.');
+      return;
+    }
+    if (busy) {
+      cancelRequested = true;
+      feedback(urlDownloadActive
+        ? 'Cancelling server download…'
+        : 'Stopping after current upload chunk…');
+      return;
+    }
+    await discard();
+    root.hidden = true;
+    resetView();
   }
   $('sb-import-close').onclick=close;
   $('sb-import-open')?.addEventListener('click',()=>{resetView();root.hidden=false;$('sb-import-close').focus()});
@@ -39,6 +56,144 @@
   $('sb-import-drop').ondragleave=e=>e.currentTarget.classList.remove('over');
   $('sb-import-drop').ondrop=e=>{e.preventDefault();e.currentTarget.classList.remove('over');const fs=[...e.dataTransfer.files];if(fs.length===1&&/\.zip$/i.test(fs[0].name))upload(fs,'zip');else feedback('For extracted folders, use Choose Folder to preserve relative paths.')};
   function progress(received,total,label){const percent=total?Math.min(100,Math.floor(received/total*100)):100;const el=$('sb-upload-progress');if(el){el.hidden=false;el.value=percent;el.max=100}$('sb-upload-progress-text').textContent=`${label}: ${percent}% · ${(received/1024**3).toFixed(2)} / ${(total/1024**3).toFixed(2)} GiB`}
+  function enterReview(inspection) {
+    preview = inspection;
+    selectedVN = null;
+    document.dispatchEvent(new Event('storyburrow:import-reset'));
+    const d = preview.detected;
+    $('sb-import-name').value = d.title.value || '';
+    $('sb-import-version').value = d.installed_version.value || '';
+    $('sb-import-source').textContent =
+      `${preview.source.name} · ${preview.source.type}`;
+    $('sb-import-technical').textContent =
+      `Launcher: ${d.launcher} · ${preview.technical.file_count} entries`;
+    $('sb-vndb-results').replaceChildren();
+    $('sb-vndb-selection').textContent = '';
+    showReview(true);
+    if ($('sb-save-review')) {
+      $('sb-save-review').disabled = false;
+    }
+    if ($('sb-install-game')) {
+      $('sb-install-game').disabled = false;
+    }
+    feedback('Inspection complete. Review detected metadata.');
+  }
+  $('sb-pick-url').onclick = () => {
+    const panel = $('sb-url-panel');
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) {
+      $('sb-url-input').focus();
+    }
+  };
+  $('sb-url-cancel').onclick = () => {
+    if (urlDownloadActive) {
+      cancelRequested = true;
+      feedback('Cancelling server download…');
+    }
+  };
+  function urlProgress(received, total) {
+    const bar = $('sb-upload-progress');
+    const label = $('sb-upload-progress-text');
+    bar.hidden = false;
+    if (total > 0) {
+      bar.removeAttribute('aria-busy');
+      bar.value = Math.min(100, received / total * 100);
+      label.textContent =
+        `Downloading: ${Math.floor(received / total * 100)}% · ` +
+        `${(received / 1024**2).toFixed(1)} / ` +
+        `${(total / 1024**2).toFixed(1)} MiB`;
+    } else {
+      bar.removeAttribute('value');
+      bar.setAttribute('aria-busy', 'true');
+      label.textContent =
+        `Downloading: ${(received / 1024**2).toFixed(1)} MiB received`;
+    }
+  }
+  async function importFromURL() {
+    if (busy || installing) return;
+    const url = $('sb-url-input').value.trim();
+    if (!url) {
+      feedback('Enter a direct download URL.');
+      return;
+    }
+    busy = true;
+    urlDownloadActive = true;
+    cancelRequested = false;
+    preview = null;
+    selectedVN = null;
+    const startButton = $('sb-url-start');
+    const cancelButton = $('sb-url-cancel');
+    startButton.disabled = true;
+    cancelButton.hidden = false;
+    try {
+      await discard();
+      feedback('Starting server download…');
+      const created = await api('/api/import/url', {url});
+      active = {
+        id: created.upload_id,
+        kind: 'zip',
+        files: []
+      };
+      let cancelSent = false;
+      while (true) {
+        if (cancelRequested && !cancelSent) {
+          await api(
+            `/api/import/url/${active.id}/cancel`,
+            {}
+          );
+          cancelSent = true;
+        }
+        const responseData = await response(
+          await fetch(`/api/import/url/${active.id}`, {
+            credentials: 'same-origin',
+            cache: 'no-store'
+          })
+        );
+        const status = responseData.status;
+        urlProgress(
+          responseData.received_bytes || 0,
+          responseData.total_bytes || 0
+        );
+        if (status === 'ready') {
+          if (cancelRequested) {
+            throw Error('Download cancelled');
+          }
+          $('sb-url-panel').hidden = true;
+          enterReview(responseData.inspection);
+          return;
+        }
+        if (status === 'failed') {
+          throw Error(
+            responseData.error || 'Server download failed'
+          );
+        }
+        if (status === 'cancelled') {
+          throw Error('Download cancelled');
+        }
+        feedback(
+          status === 'inspecting'
+            ? 'Download complete. Inspecting Ren’Py game…'
+            : cancelRequested
+              ? 'Cancelling server download…'
+              : 'Downloading directly to StoryBurrow…'
+        );
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+    } catch (error) {
+      feedback(error.message);
+    } finally {
+      busy = false;
+      urlDownloadActive = false;
+      startButton.disabled = false;
+      cancelButton.hidden = true;
+      if (cancelRequested) {
+        await discard();
+        resetView();
+        root.hidden = true;
+      }
+    }
+  }
+  $('sb-url-start').onclick = importFromURL;
   async function upload(files,kind){
     if(busy||!files.length)return;
     busy=true;cancelRequested=false;selectedVN=null;preview=null;document.dispatchEvent(new Event('storyburrow:import-reset'));
@@ -78,14 +233,7 @@
       if(cancelRequested)throw Error('Upload cancelled');
       feedback('Verifying and inspecting…');
       const result=await api(`/api/import/uploads/${active.id}/complete`,{});
-      preview=result.inspection;
-      const d=preview.detected;
-      $('sb-import-name').value=d.title.value||'';
-      $('sb-import-version').value=d.installed_version.value||'';
-      $('sb-import-source').textContent=`${preview.source.name} · ${preview.source.type}`;
-      $('sb-import-technical').textContent=`Launcher: ${d.launcher} · ${preview.technical.file_count} entries`;
-      $('sb-vndb-results').replaceChildren();$('sb-vndb-selection').textContent='';
-      showReview(true);if($('sb-install-game'))$('sb-install-game').disabled=false;feedback('Inspection complete. Review detected metadata.');
+      enterReview(result.inspection);
     }catch(e){feedback(e.message)}finally{
       busy=false;
       if(cancelRequested){await discard();resetView();root.hidden=true;}
