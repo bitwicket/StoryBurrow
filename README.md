@@ -54,6 +54,8 @@ I want to make this bigger and even more usable. Feel free to recommend features
   - You can remove games while retaining saves and metadata, or forget the game entirely like it had never been installed before. Both choices are clearly labeled and have different 'type to confirm' phrases.
 - Installation IDs
   - Sometimes you want to have 2 version of a game running parallel instead of updating. Import does not check existing installs and saves are tied to the install's UUID, so they won't cross wires.
+- Add Game via Link
+  - Use a direct to zip link to download and install directly to server.
 - Art Manger
   - You can upload a cover yourself now. Over ruling any previous selections. Options: File from Client, URL, VNDB picker.
 - Improved Start Up Process
@@ -69,8 +71,8 @@ docker exec -it -u ubuntu storyburrow /opt/storyburrow-venv/bin/python /app/auth
 :white_check_mark: Improved startup process.
 
 :white_check_mark: Art Manager
-- Add Game Via Link
-  - Directly downloading a game from a patreon or itch.io link would be great. Its on the short list for a 1.0 release.
+
+:white_check_mark: Add Game Via Link
 
 -  Mod Management
     - Add a mod or patch from the UI and persist the mod in the /mods/game-id structure so it can be easily reapplied to new versions.
