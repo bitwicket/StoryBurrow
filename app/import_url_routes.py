@@ -77,7 +77,7 @@ def validated_address(url):
         ips.append(str(ip))
     return parsed, port, ips[0]
 
-def open_download(url):
+def open_download(url, extra_headers=None):
     current = url
     for _ in range(MAX_REDIRECTS + 1):
         parsed, port, address = validated_address(current)
@@ -86,13 +86,15 @@ def open_download(url):
         if parsed.query:
             path += '?' + parsed.query
         try:
-            conn.request(
-                'GET', path,
-                headers={
-                    'Accept': 'application/zip,application/octet-stream,*/*',
-                    'User-Agent': 'StoryBurrow/0.9',
-                }
-            )
+            headers = {
+                'Accept': 'application/zip,application/octet-stream,*/*',
+                'User-Agent': 'StoryBurrow/0.9',
+            }
+            if extra_headers:
+                host = (parsed.hostname or '').lower()
+                if host == 'gofile.io' or host.endswith('.gofile.io'):
+                    headers.update(extra_headers)
+            conn.request('GET', path, headers=headers)
             response = conn.getresponse()
             if response.status in (301, 302, 303, 307, 308):
                 location = response.getheader('Location')
@@ -208,6 +210,8 @@ def start_url_download():
     url = data.get('url', '')
     if not isinstance(url, str) or not (1 <= len(url) <= 8192):
         return problem('Provide a valid download URL')
+    from import_hosted import provider_for
+    provider = provider_for(url)
     try:
         validated_address(url)
     except ValueError as exc:
@@ -229,9 +233,16 @@ def start_url_download():
             'error': None
         }
         save_state(root, state)
+    if provider:
+        from import_hosted import hosted_worker
+        worker = hosted_worker
+        worker_args = (token, url, provider)
+    else:
+        worker = download_worker
+        worker_args = (token, url)
     threading.Thread(
-        target=download_worker,
-        args=(token, url),
+        target=worker,
+        args=worker_args,
         daemon=True,
         name=f'storyburrow-url-{token[:8]}'
     ).start()

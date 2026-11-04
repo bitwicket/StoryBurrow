@@ -177,3 +177,18 @@
     width: 100%;
   }
 }
+
+.sb-url-warning {
+  padding: 10px 14px;
+  margin: 10px 0;
+  border: 1px solid #957344;
+  border-radius: 8px;
+  background: rgba(180, 130, 55, 0.12);
+  color: #e4c58e;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.sb-url-warning[hidden] {
+  display: none !important;
+}

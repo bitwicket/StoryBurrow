@@ -16,10 +16,12 @@ COPY --chown=1000:1000 --chmod=755 \
 # StoryBurrow web application dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-      python3 python3-venv && \
+      python3 python3-venv \
+      megatools && \
     python3 -m venv /opt/storyburrow-venv && \
     /opt/storyburrow-venv/bin/pip install \
       --no-cache-dir \
+      requests \
       Pillow \
       'Flask==3.1.2' \
       'ecdsa==0.19.1' && \
@@ -46,4 +48,4 @@ WORKDIR /app
 EXPOSE 6080 2500
 
 # Preserve Selkies' native initialization.
-ENTRYPOINT ["/etc/container-entrypoint.sh"]
+# ENTRYPOINT ["/etc/container-entrypoint.sh"]

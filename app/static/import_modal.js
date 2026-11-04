@@ -24,6 +24,8 @@
     if($('sb-install-game'))$('sb-install-game').disabled=true;
     $('sb-url-panel').hidden = true;
     $('sb-url-input').value = '';
+    $('sb-url-warning').hidden = true;
+    $('sb-url-warning').textContent = '';
     $('sb-url-start').disabled = false;
     $('sb-url-cancel').hidden = true;
     urlDownloadActive = false;
@@ -85,12 +87,35 @@
       $('sb-url-input').focus();
     }
   };
+  
   $('sb-url-cancel').onclick = () => {
     if (urlDownloadActive) {
       cancelRequested = true;
       feedback('Cancelling server download…');
     }
   };
+  function megaWarning(url) {
+    try {
+      const host = new URL(url).hostname.toLowerCase();
+      return ['mega.nz', 'www.mega.nz', 'mega.co.nz'].includes(host);
+    } catch {
+      return false;
+    }
+  }
+  function updateURLWarning() {
+    const url = $('sb-url-input').value.trim();
+    const warning = $('sb-url-warning');
+    if (megaWarning(url)) {
+      warning.textContent =
+        'MEGA enforces transfer quotas. Large downloads may pause or fail ' +
+        'when your available quota is exhausted.';
+      warning.hidden = false;
+    } else {
+      warning.textContent = '';
+      warning.hidden = true;
+    }
+  }
+  $('sb-url-input').addEventListener('input', updateURLWarning);
   function urlProgress(received, total) {
     const bar = $('sb-upload-progress');
     const label = $('sb-upload-progress-text');
@@ -113,7 +138,7 @@
     if (busy || installing) return;
     const url = $('sb-url-input').value.trim();
     if (!url) {
-      feedback('Enter a direct download URL.');
+      feedback('Enter a download URL.');
       return;
     }
     busy = true;

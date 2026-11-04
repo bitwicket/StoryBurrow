@@ -19,9 +19,9 @@
           maxlength="8192"
         >
         <p class="sb-import-hint">
-          StoryBurrow downloads the ZIP directly to the server.
-          Public HTTPS links only; authentication-required pages
-          and GOG installers aren't supported yet.
+          StoryBurrow downloads the ZIP directly to the server.<br>
+          Currently Supported: HTTP(S) direct downloads, MEGA links, and gofile.io links.<br>
+          Other hosts may work if they provide a direct download link. (try right-clicking the download button and selecting "Copy link address")
         </p>
         <div class="sb-import-actions">
           <button type="button" class="play" id="sb-url-start">
@@ -31,6 +31,7 @@
             Cancel download
           </button>
         </div>
+        <p id="sb-url-warning" class="sb-url-warning" role="status" hidden></p>
       </div>
       <input id="sb-zip-input" type="file" accept=".zip,application/zip" hidden>
       <input id="sb-folder-input" type="file" webkitdirectory multiple hidden>
