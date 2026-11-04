@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Patches for {{ game_id }} — StoryBurrow</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='edit_game.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='patch_game.css') }}">
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="brand">Story<span>Burrow</span></div><span class="tagline">Your stories, one cozy place.</span>
+    </header>
+    <main class="sb-edit-page sb-patch-page">
+        <a class="sb-back" href="{{ url_for('edits.edit_game', game_id=game_id) }}">← Edit Game</a>
+        <p class="eyebrow">INSTALLATION MANAGEMENT</p>
+        <h1>Manage patches</h1>
+        <p class="sb-edit-note">{{ game_id }} · Add translation files, fixes, or mods without replacing the entire build. Existing files are backed up for safe reversion.</p>
+        {% for category, message in get_flashed_messages(with_categories=true) %}<p class="sb-patch-alert {{ category }}" role="alert">{{ message }}</p>{% endfor %}
+        <section class="sb-patch-panel">
+            <h2>Install a patch</h2>
+            {% if not preview %}
+            <form action="{{ url_for('patches.upload', game_id=game_id) }}" method="post" enctype="multipart/form-data" id="sb-patch-upload">
+                <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                <label for="sb-patch-file">ZIP archive or standalone file</label>
+                <input id="sb-patch-file" name="patch" type="file" required>
+                <label for="sb-patch-destination">Standalone file destination <small>(relative to the game's installation directory)</small></label>
+                <input id="sb-patch-destination" name="destination" placeholder="game/scripts/example.rpy — optional; default game/filename">
+                <p class="sb-edit-note">For ZIPs, paths inside the archive determine their destinations. A single enclosing wrapper folder is removed automatically. Maximum upload: 256 MiB.</p>
+                <button class="play" type="submit">Upload and preview</button>
+            </form>
+            <div class="sb-patch-url" data-game-id="{{ game_id }}" data-csrf="{{ csrf }}">
+                <h3>Or download from URL</h3>
+                <p class="sb-edit-note">StoryBurrow downloads directly to the server—your browser never handles the patch file. Direct HTTPS, Gofile, and MEGA file links are supported.</p>
+                <label for="sb-patch-url">Download URL</label>
+                <input id="sb-patch-url" type="url" maxlength="8192" placeholder="https://example.com/translation.zip">
+                <label for="sb-patch-url-destination">Standalone file destination <small>(optional)</small></label>
+                <input id="sb-patch-url-destination" placeholder="game/scripts/translation.rpy">
+                <div class="sb-patch-url-actions">
+                    <button class="play" type="button" id="sb-patch-url-start">Download and preview</button>
+                    <button type="button" id="sb-patch-url-cancel" hidden>Cancel download</button>
+                </div>
+                <progress id="sb-patch-url-progress" max="100" hidden></progress>
+                <p id="sb-patch-url-status" class="sb-edit-note" role="status" aria-live="polite"></p>
+            </div>
+            {% else %}
+            <h3>Review changes</h3>
+            {% if stripped %}<p class="sb-edit-note">Removed enclosing folder <code>{{ stripped }}/</code> from the archive paths.</p>{% endif %}
+            <p class="sb-edit-note">{{ preview|length }} file(s) · Changes are not applied until you confirm.</p>
+            <div class="sb-patch-list" role="region" aria-label="Patch file preview" tabindex="0">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>Destination in game</th>
+                            <th>Size</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in preview %}<tr>
+                            <td><span class="sb-patch-action {{ item.action }}">{{ item.action }}</span></td>
+                            <td><code>{{ item.destination }}</code></td>
+                            <td>{{ '{:,}'.format(item.size) }} B</td>
+                        </tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <form method="post" action="{{ url_for('patches.install', game_id=game_id, token=token) }}" onsubmit="return confirm('Apply these changes to the installed game?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="play" type="submit">Apply patch</button>
+                <a class="sb-cancel" href="{{ url_for('patches.page', game_id=game_id) }}">Cancel</a>
+            </form>
+            {% endif %}
+        </section>
+        <section class="sb-patch-panel">
+            <h2>Patch history</h2>
+            {% if patches %}
+            {% for patch in patches %}
+            <div class="sb-patch-entry">
+                <div><strong>{{ patch.name }}</strong>
+                    <p class="sb-edit-note">{{ patch.files|length }} file(s) · {{ patch.status|capitalize }} · {{ patch.installed_at|int }}</p>
+                </div>
+                {% if patch.status == 'installed' %}
+                <form method="post" action="{{ url_for('patches.undo', game_id=game_id, patch_id=patch.id) }}" onsubmit="return confirm('Revert this patch? Only files unchanged since patching can be restored.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button type="submit">Revert</button>
+                </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}<p class="sb-edit-note">No patches have been installed yet.</p>{% endif %}
+        </section>
+        <p class="sb-edit-note">Reversion is blocked if patched files have changed or a newer patch overlaps. Your saves are never included in patch operations.</p>
+    </main>
+    <script src="{{ url_for('static', filename='patch_url.js') }}" defer></script>
+</body>
+</html>

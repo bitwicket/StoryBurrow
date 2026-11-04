@@ -157,6 +157,10 @@ def gofile_files(token, client, content_id, account_token):
             raise HostedError("Gofile share contains too many files")
     return files
 
+def _limit(token):
+    from import_url_routes import download_limit
+    return download_limit(token)
+
 def download_gofile(token, url):
     from import_url_routes import open_download
     parsed = urlsplit(url)
@@ -192,7 +196,7 @@ def download_gofile(token, url):
         if not isinstance(link, str):
             raise HostedError("Gofile did not return a download link")
         declared_size = item.get("size", 0)
-        if isinstance(declared_size, int) and declared_size > MAX_UPLOAD:
+        if isinstance(declared_size, int) and declared_size > _limit(token):
             raise HostedError("File exceeds the 20 GiB import limit")
         headers = {
             "Authorization": f"Bearer {account_token}",
@@ -210,7 +214,7 @@ def download_gofile(token, url):
                 if length_header and length_header.isdecimal()
                 else 0
             )
-            if expected > MAX_UPLOAD:
+            if expected > _limit(token):
                 raise HostedError("File exceeds the 20 GiB import limit")
             total = expected or (
                 declared_size if isinstance(declared_size, int) else 0
@@ -229,7 +233,7 @@ def download_gofile(token, url):
                     if not chunk:
                         break
                     received += len(chunk)
-                    if received > MAX_UPLOAD:
+                    if received > _limit(token):
                         raise HostedError("File exceeds the import limit")
                     output.write(chunk)
                     save(
@@ -311,7 +315,7 @@ def download_mega(token, url):
             if received > last_size:
                 last_progress = now
                 last_size = received
-            if received > MAX_UPLOAD:
+            if received > _limit(token):
                 raise HostedError("MEGA file exceeds the import limit")
             if now - last_progress > STALL_SECONDS:
                 raise HostedError(
@@ -336,7 +340,7 @@ def download_mega(token, url):
         if files[0].is_symlink():
             raise HostedError("Unexpected symbolic link in download")
         size = files[0].stat().st_size
-        if size > MAX_UPLOAD:
+        if size > _limit(token):
             raise HostedError("MEGA ZIP exceeds the import limit")
         filename = files[0].name
         os.replace(files[0], ROOT / token / "upload.zip")
@@ -373,15 +377,8 @@ def hosted_worker(token, url, provider):
             offsets=[size],
             files=[{"path": filename, "size": size}],
         )
-        inspected = inspect(destination)
-        if is_cancelled(token):
-            raise HostedCancelled()
-        inspected["source"]["name"] = filename
-        inspected["preview_id"] = token
-        (root / "inspection.json").write_text(
-            json.dumps(inspected), encoding="utf-8"
-        )
-        save(token, status="ready")
+        from import_url_routes import finish_download
+        finish_download(token, filename)
 
     except HostedCancelled:
         destination.unlink(missing_ok=True)

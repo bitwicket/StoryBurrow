@@ -210,6 +210,11 @@
   </div>
 </div> 
   {% if record %}
+  <section class="sb-edit-future" aria-label="Game patches">
+    <h2>Manage patches and mods</h2>
+    <p>Install translations, fixes, or mods from ZIP archives or standalone files. Review changes and safely revert patches when needed.</p>
+    <a class="play" href="{{ url_for('patches.page', game_id=game.id) }}">Manage patches</a>
+  </section>
   <section class="sb-edit-future" aria-label="Update game">
     <h2>Update game</h2>
     <p>Upload a replacement build for this installation. Saves are snapshotted, and the previous game files are retained for rollback.</p>

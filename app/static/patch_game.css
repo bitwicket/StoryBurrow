@@ -1,0 +1,128 @@
+.sb-patch-page {
+    padding-bottom: 3rem
+}
+
+.sb-patch-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin: 1.3rem 0
+}
+
+.sb-patch-panel h2 {
+    margin-top: 0
+}
+
+.sb-patch-panel label {
+    display: block;
+    font-weight: 650;
+    margin: 1rem 0 .4rem
+}
+
+.sb-patch-panel input[type=file],
+.sb-patch-panel input[type=text],
+.sb-patch-panel input[name=destination] {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .8rem;
+    background: var(--bg);
+    color: var(--text)
+}
+
+.sb-patch-panel button {
+    cursor: pointer
+}
+
+.sb-patch-list {
+    max-height: 420px;
+    overflow: auto;
+    margin: 1rem 0
+}
+
+.sb-patch-list table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left
+}
+
+.sb-patch-list th,
+.sb-patch-list td {
+    border-bottom: 1px solid var(--border);
+    padding: .65rem
+}
+
+.sb-patch-list code {
+    overflow-wrap: anywhere
+}
+
+.sb-patch-action {
+    text-transform: capitalize;
+    font-size: .83rem;
+    font-weight: 650
+}
+
+.sb-patch-action.overwrite {
+    color: var(--accent)
+}
+
+.sb-patch-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    border-top: 1px solid var(--border);
+    padding: 1rem 0
+}
+
+.sb-patch-entry p {
+    margin: .3rem 0 0
+}
+
+.sb-patch-alert {
+    padding: .9rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border)
+}
+
+.sb-patch-alert.error {
+    color: #e88181
+}
+
+.sb-patch-alert.success {
+    color: var(--accent)
+}
+
+.sb-patch-url {
+    margin-top: 1.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border)
+}
+
+.sb-patch-url h3 {
+    margin-top: 0
+}
+
+.sb-patch-url input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .8rem;
+    background: var(--bg);
+    color: var(--text)
+}
+
+.sb-patch-url-actions {
+    display: flex;
+    gap: .8rem;
+    margin-top: 1rem;
+    flex-wrap: wrap
+}
+
+.sb-patch-url progress {
+    width: 100%;
+    margin-top: 1rem
+}

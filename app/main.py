@@ -69,6 +69,8 @@ def safe_next(value):
 
 @app.before_request
 def protect():
+    if request.endpoint == 'patches.upload':
+        request.max_content_length = 256 * 1024 * 1024
     if request.endpoint == 'custom_art.set_custom_artwork':
         request.max_content_length = 13 * 1024 * 1024
     if request.endpoint == 'imports.upload_create':
@@ -352,6 +354,9 @@ def session_status():
 # Register editing after core routes/helpers are defined.
 from edit_routes import bp as edit_bp
 app.register_blueprint(edit_bp)
+
+from patch_routes import bp as patch_bp
+app.register_blueprint(patch_bp)
 
 from update_routes import bp as update_bp
 app.register_blueprint(update_bp)
