@@ -37,6 +37,7 @@ Please add any clients you test to the [discussion here!](https://github.com/bit
 I want to make this bigger and even more usable. Feel free to recommend features that you would use in addition to what is below!
 
 ### Implemented Features:
+
 - Persistent Login. 
   - 1 account is required, at the end of the day the container is a running a full OS, balancing the risk of malicious injection selkies stream is only available where the account is logged in to StoryBurrow. Its not bulletproof but should mitigate well.
 - Game Upload.
@@ -58,6 +59,8 @@ I want to make this bigger and even more usable. Feel free to recommend features
   - Use a direct to zip link to download and install directly to server.
 - Art Manger
   - You can upload a cover yourself now. Over ruling any previous selections. Options: File from Client, URL, VNDB picker.
+- Patch and Mod Managment (unified to "Patch")
+  - Mods and update patches can be installed via the game edit screen. This will append files to the existing game.
 - Improved Start Up Process
   - First launch redirects to `/setup` to make the admin account. This page is blocked from subsequent creations for now.
   - Reset password via CLI with:
@@ -74,9 +77,10 @@ docker exec -it -u ubuntu storyburrow /opt/storyburrow-venv/bin/python /app/auth
 
 :white_check_mark: Add Game Via Link
 
--  Mod Management
-    - Add a mod or patch from the UI and persist the mod in the /mods/game-id structure so it can be easily reapplied to new versions.
-    - Possibly a seperate holding pattern for [URM](https://0x52.dev/mods/Universal-Ren-Py-Mod-1000) and an option to install it per game.
+:white_check_mark:  Patch Management
+
+:white_check_mark:  Mod Management (Unified under Patching)
+
 -  Improved Input Handling
     -   Mobile is rough, I added a 'controls' element that can do simple things like back, forward, menu and keyboard if its hard to access in the game, and a 'return to library' button on the other side. These serve as a stopgap more than anything.
     
@@ -148,6 +152,8 @@ Only the StoryBurrow HTTPS web port (container `2500`) needs to be published. Se
 ### 3. Open the library and Create the administrator account
 
 Visit `https://<your-server-address>:<STORYBURROW_PORT>` (normally port `2500`), accept or trust the local HTTPS certificate, its self-signed in Caddy. Your first launch will be redirected to the `/setup` page to create your admin account.
+
+[Page-by-page guide starts here](/docs/Library.md)
 
 Select **Add game** to import a Linux-compatible Ren’Py game. Only import games that you are permitted to use.
 
