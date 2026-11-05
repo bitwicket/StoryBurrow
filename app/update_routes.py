@@ -6,7 +6,6 @@ import threading
 import uuid
 import time
 from pathlib import Path
-
 from flask import Blueprint, abort, jsonify, render_template, request, session
 from catalog import connect, installed_by_directory
 from installer import prepare, GAMES
@@ -19,11 +18,9 @@ from save_routing import _read_config, SAVES
 bp = Blueprint('updates', __name__)
 UPDATE_LOCK = threading.Lock()
 
-
 def _csrf():
     if not hmac.compare_digest(request.headers.get('X-CSRF-Token', ''), session.get('_csrf', 'not-set')):
         abort(400, description='Invalid CSRF token')
-
 
 def _installation(name):
     from main import manager_command
@@ -38,7 +35,6 @@ def _installation(name):
     if row is None or row['save_mode'] != 'managed' or not row['managed_save_namespace']:
         abort(409, description='Managed saves are required for game updates')
     return dict(row), record
-
 
 def _validate_route(name, row):
     from save_routing import _paths
@@ -55,15 +51,13 @@ def _validate_route(name, row):
         raise ValueError('Game-local saves are not routed to managed storage')
     return directory, root, config
 
-
 @bp.get('/games/<game_id>/update')
 def update_page(game_id):
     row, record = _installation(game_id)
     from main import csrf_token
-    return render_template('update_game.html', game_id=game_id,
+    return render_template('update_game_fragment.html' if request.args.get('fragment') == '1' else 'update_game.html', game_id=game_id,
                            current_version=row.get('installed_version') or '',
                            csrf=csrf_token())
-
 
 @bp.post('/api/games/<game_id>/update/<token>')
 def update_begin(game_id, token):
@@ -96,11 +90,8 @@ def update_begin(game_id, token):
         launched = True
         return jsonify(ok=True, status='updating'), 202
     finally:
-        # The worker holds the exclusive logical update slot until completion.
-        # Release only if the thread wasn't launched.
         if not launched:
             UPDATE_LOCK.release()
-
 
 def _worker(root, token, owner, name, version, retain_build):
     pending = None
@@ -128,9 +119,6 @@ def _worker(root, token, owner, name, version, retain_build):
             inspected = json.loads((root / 'inspection.json').read_text('utf-8'))
         if not source.exists():
             raise ValueError('Uploaded build is missing')
-        # `prepare` is shared with Import Game, which rejects an existing target.
-        # Supply an unused validation name: `prepare` still returns a staging
-        # directory under /games/.storyburrow-installing, not a new game install.
         staging_name = 'StoryBurrowUpdate-' + uuid.uuid4().hex
         pending, launcher, fresh = prepare(source, staging_name)
         if fresh['detected']['launcher'] != inspected['detected']['launcher']:
@@ -142,16 +130,13 @@ def _worker(root, token, owner, name, version, retain_build):
             raise ValueError('Cannot verify Ren\'Py save identifier for both versions. Update blocked until routing compatibility is established.')
         if original_id != incoming_id:
             raise ValueError('Ren\'Py save identifier changed. Update blocked to prevent misrouted saves; use a separate import.')
-        # New build can contain a stale game-local saves directory; never merge it.
         local = pending / 'game' / 'saves'
         if local.is_symlink():
             raise ValueError('Incoming game contains a symlinked saves directory')
         if local.exists():
-            # Refuse unexpected bundled save data rather than silently destroying it.
             if not local.is_dir() or any(local.iterdir()):
                 raise ValueError('Incoming game contains game-local save data. Remove those files from the upload first.')
             local.rmdir()
-        # The old version must be recorded, not guessed from the incoming upload.
         previous_version = (row.get('installed_version') or '').strip()
         if not previous_version:
             raise ValueError('Set the installed version in Edit Game before updating (needed for snapshot label)')
@@ -180,14 +165,11 @@ def _worker(root, token, owner, name, version, retain_build):
                 field_value_json=excluded.field_value_json,source_type=excluded.source_type,updated_at=excluded.updated_at''',
                 (row['game_id'], 'installed_version', json.dumps(version), 'update', None,
                  __import__('time').time_ns() // 10**9))
-        # Only backups created by this version receive an expiration marker.
-        # The previous build stays available for rollback until catalog commit.
+
         if retain_build:
             from build_backups import register_backup
             register_backup(backup, row['installation_id'], name, previous_version, version, row['launcher_name'])
         else:
-            # Removal is best-effort: an unexpected cleanup failure must not
-            # turn a successful update into a failed operation.
             from build_backups import remove_unretained
             remove_unretained(backup)
         result = {'directory':name, 'installed_version':version, 'previous_version':previous_version,
@@ -195,7 +177,6 @@ def _worker(root, token, owner, name, version, retain_build):
                   'previous_build':str(backup) if retain_build else None,
                    'backup_expires_in_hours':48 if retain_build else None}
     except Exception as exc:
-        # Never remove the previous build or any save namespace on failure.
         error = str(exc)
         if swapped and backup is not None:
             from main import manager_command
@@ -213,7 +194,6 @@ def _worker(root, token, owner, name, version, retain_build):
             state['status'] = 'updated'
             state['update_result'] = result
             save_state(root, state)
-        # STORYBURROW_STAGE3C_PAYLOAD_PRUNE: preserve update status and snapshot.
         try:
             from staging_cleanup import prune_completed_payload
             prune_completed_payload(root)
@@ -228,7 +208,6 @@ def _worker(root, token, owner, name, version, retain_build):
             manager_command('release_update', game=name)
         UPDATE_LOCK.release()
 
-
 @bp.get('/api/games/<game_id>/update/<token>')
 def update_status(game_id, token):
     if not TOKEN.fullmatch(token):
@@ -236,3 +215,5 @@ def update_status(game_id, token):
     with LOCK:
         _, state = get_upload(token)
         return jsonify(ok=True, status=state['status'], error=state.get('update_error'), result=state.get('update_result'))
+
+

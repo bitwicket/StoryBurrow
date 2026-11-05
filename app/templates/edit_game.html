@@ -9,6 +9,10 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='art_picker.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='uninstall.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='artwork_modal.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='import_modal.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='patch_game.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='game_management_modals.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='update_game.css') }}">
 </head>
 <body>
 <header class="site-header"><div class="brand">Story<span>Burrow</span></div><span class="tagline">Your stories, one cozy place.</span></header>
@@ -24,20 +28,6 @@
       {% else %}
         <div class="sb-edit-placeholder" aria-label="No artwork available">✦</div>
       {% endif %}
-      <p class="sb-edit-note">
-        <button type="button" id="sb-art-open" class="sb-art-open">
-          <svg xmlns="http://www.w3.org/2000/svg"
-              width="18" height="18" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round"
-              stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <path d="m21 15-5-5L5 21"/>
-          </svg>
-          <span>Change artwork</span>
-        </button>
-      </p>
     </div>
     <div class="sb-edit-fields">
       {% if record %}
@@ -67,6 +57,22 @@
         <a class="sb-cancel" href="{{ url_for('library') }}">Back to Library</a>
       {% endif %}
     </div>
+    {% if record %}
+    <div class="sb-management-toolbar" aria-label="Game management actions">
+      <button type="button" id="sb-art-open" class="sb-management-action">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><span>Change artwork</span>
+      </button>
+      <button type="button" id="sb-patch-open" class="sb-management-action">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Manage patches</span>
+      </button>
+      <button type="button" class="sb-management-action" data-sb-managed-open="update">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14 5l2-2"/><path d="M16 16h4v4"/></svg><span>Update game</span>
+      </button>
+      <button type="button" class="sb-management-action" data-sb-managed-open="builds">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg><span>Previous builds</span>
+      </button>
+    </div>
+    {% endif %}
   </section>
   <!-- art modal -->
 <div class="sb-art-modal" id="sb-art-modal" hidden>
@@ -210,25 +216,6 @@
   </div>
 </div> 
   {% if record %}
-  <section class="sb-edit-future" aria-label="Game patches">
-    <h2>Manage patches and mods</h2>
-    <p>Install translations, fixes, or mods from ZIP archives or standalone files. Review changes and safely revert patches when needed.</p>
-    <a class="play" href="{{ url_for('patches.page', game_id=game.id) }}">Manage patches</a>
-  </section>
-  <section class="sb-edit-future" aria-label="Update game">
-    <h2>Update game</h2>
-    <p>Upload a replacement build for this installation. Saves are snapshotted, and the previous game files are retained for rollback.</p>
-    <a class="play" href="{{ url_for('updates.update_page', game_id=game.id) }}">Update Game</a>
-  </section>
-  {% if record %}
-  <section class="sb-edit-future" aria-label="Previous game builds">
-    <h2>Previous builds</h2>
-    <p>Roll back to a retained build or remove it early. New backups automatically expire after 48 hours.</p>
-    <a class="play" href="{{ url_for('build_backups.page', game_id=game.id) }}">
-      Manage previous builds
-    </a>
-  </section>
-  {% endif %}
   <section class="sb-edit-future sb-uninstall" aria-label="Uninstall game">
     <h2>Uninstall game</h2>
     <p>Remove this installation from StoryBurrow and delete its game files. <strong>Saved games in /saves are preserved.</strong> This cannot be undone.</p>
@@ -262,9 +249,68 @@
   </section>
   {% endif %}
 </main>
+{% if record %}
+<div class="sb-managed-backdrop" id="sb-management-modal" hidden>
+  <section class="sb-managed-dialog" role="dialog" aria-modal="true" aria-labelledby="sb-managed-modal-title" tabindex="-1">
+    <header class="sb-managed-heading"><h2 id="sb-managed-modal-title">Game management</h2><button type="button" class="sb-managed-close" id="sb-managed-close" aria-label="Close dialog">×</button></header>
+    <div id="sb-managed-content" class="sb-managed-content" data-update-url="{{ url_for('updates.update_page', game_id=game.id) }}?fragment=1" data-builds-url="{{ url_for('build_backups.page', game_id=game.id) }}?fragment=1" data-edit-url="{{ url_for('edits.edit_game', game_id=game.id) }}" role="region" aria-live="polite"></div>
+  </section>
+</div>
+{% endif %}
+{% if record %}
+<div id="sb-patch-modal" class="sb-import-backdrop" hidden>
+  <section class="sb-import-dialog" role="dialog" aria-modal="true" aria-labelledby="sb-patch-modal-title">
+    <div class="sb-import-heading">
+      <h2 id="sb-patch-modal-title">Add a patch</h2>
+      <button type="button" id="sb-patch-close" aria-label="Close patch import">×</button>
+    </div>
+    <p class="sb-import-hint">Upload a ZIP or standalone file, or download a patch directly to the server. Review the file destinations before applying.</p>
+    <div id="sb-patch-pick">
+      <div class="sb-import-drop" id="sb-patch-drop" tabindex="0" role="button" aria-label="Drop a patch file here or choose one below">Drop a ZIP or patch file here, or choose a file below.</div>
+      <div class="sb-import-actions">
+        <button type="button" id="sb-patch-pick-file">Choose File</button>
+        <button type="button" id="sb-patch-pick-url">Import from URL</button>
+      </div>
+    </div>
+    <form action="{{ url_for('patches.upload', game_id=game.id) }}" method="post" enctype="multipart/form-data" id="sb-patch-upload" hidden>
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <input id="sb-patch-file" name="patch" type="file" hidden required>
+      <p id="sb-patch-file-name" class="sb-import-hint"></p>
+      <label for="sb-patch-destination">Standalone file destination <small>(optional; relative to the game directory)</small></label>
+      <input id="sb-patch-destination" name="destination" placeholder="game/scripts/example.rpy — defaults to game/filename" autocomplete="off">
+      <p class="sb-import-hint">For ZIPs, destinations come from the archive. A single wrapper folder is removed automatically. Maximum browser upload: 256 MiB.</p>
+      <div class="sb-import-actions">
+        <button type="submit" class="play">Upload and preview</button>
+        <button type="button" id="sb-patch-file-back">Back</button>
+      </div>
+    </form>
+    <div class="sb-patch-url" data-game-id="{{ game.id }}" data-csrf="{{ csrf }}" hidden>
+      <label for="sb-patch-url">Download URL</label>
+      <input id="sb-patch-url" type="url" maxlength="8192" placeholder="https://example.com/translation.zip" autocomplete="off">
+      <p class="sb-import-hint">StoryBurrow downloads directly to the server. Supported: HTTP(S) direct downloads, Gofile and MEGA file links.</p>
+      <label for="sb-patch-url-destination">Standalone file destination <small>(optional)</small></label>
+      <input id="sb-patch-url-destination" placeholder="game/scripts/translation.rpy" autocomplete="off">
+      <div class="sb-import-actions">
+        <button class="play" type="button" id="sb-patch-url-start">Download and preview</button>
+        <button type="button" id="sb-patch-url-cancel" hidden>Cancel download</button>
+        <button type="button" id="sb-patch-url-back">Back</button>
+      </div>
+      <progress id="sb-patch-url-progress" max="100" hidden></progress>
+      <p id="sb-patch-url-status" class="sb-import-hint" role="status" aria-live="polite"></p>
+    </div>
+    <p class="sb-import-hint sb-patch-history-link"><a href="{{ url_for('patches.page', game_id=game.id) }}">View installed patches and revert history</a></p>
+  </section>
+</div>
+{% endif %}
 {% if record and game.vndb_id %}
 <script src="{{ url_for('static', filename='art_picker.js') }}" defer></script>
 {% endif %}
 <script src="{{ url_for('static', filename='artwork_modal.js') }}" defer></script>
+{% if record %}
+<script src="{{ url_for('static', filename='patch_modal.js') }}" defer></script>
+<script src="{{ url_for('static', filename='patch_url.js') }}" defer></script>
+<script src="{{ url_for('static', filename='update_game.js') }}" defer></script>
+<script src="{{ url_for('static', filename='game_management_modals.js') }}" defer></script>
+{% endif %}
 </body>
 </html>

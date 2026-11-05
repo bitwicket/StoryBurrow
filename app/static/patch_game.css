@@ -126,3 +126,30 @@
     width: 100%;
     margin-top: 1rem
 }
+
+#sb-patch-modal[hidden],
+#sb-patch-upload[hidden],
+#sb-patch-pick[hidden],
+#sb-patch-modal .sb-patch-url[hidden] {
+    display: none !important;
+}
+
+#sb-patch-modal .sb-patch-url {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+#sb-patch-modal .sb-import-dialog input {
+    box-sizing: border-box;
+}
+
+#sb-patch-modal .sb-import-dialog button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+#sb-patch-modal progress {
+    width: 100%;
+    margin-top: 1rem;
+}

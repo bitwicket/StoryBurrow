@@ -1,4 +1,3 @@
-"""Manage retained previous game builds. Game-file operations are serialized through manager reservation."""
 import hmac
 import logging
 import shutil
@@ -11,7 +10,6 @@ from build_backups import list_backups, check_owner, remove_backup, expired_toke
 
 bp = Blueprint('build_backups', __name__)
 LOCK = threading.RLock()
-
 
 def _guard(name, csrf=False):
     from main import manager_command
@@ -28,18 +26,15 @@ def _guard(name, csrf=False):
         abort(404)
     return dict(row)
 
-
 def _reserve(game):
     from main import manager_command
     result = manager_command('reserve_update', game=game)
     if not result.get('ok'):
         raise ValueError(result.get('error', 'Manager could not reserve game'))
 
-
 def _release(game):
     from main import manager_command
     manager_command('release_update', game=game)
-
 
 @bp.get('/games/<game_id>/previous-builds')
 def page(game_id):
@@ -48,8 +43,7 @@ def page(game_id):
     backups = list_backups(row['installation_id'])
     for backup in backups:
         backup['expiration_local'] = datetime.fromtimestamp(backup['expires_at']).astimezone().strftime('%Y-%m-%d %H:%M %Z')
-    return render_template('previous_builds.html', game_id=game_id, backups=backups, csrf=csrf_token())
-
+    return render_template('previous_builds_fragment.html' if request.args.get('fragment') == '1' else 'previous_builds.html', game_id=game_id, backups=backups, csrf=csrf_token())
 
 @bp.post('/games/<game_id>/previous-builds/<token>/delete')
 def delete(game_id, token):
@@ -64,7 +58,6 @@ def delete(game_id, token):
             _release(game_id)
     flash('Previous build deleted.', 'success')
     return redirect(url_for('.page', game_id=game_id), code=303)
-
 
 @bp.post('/games/<game_id>/previous-builds/<token>/rollback')
 def rollback(game_id, token):
@@ -99,11 +92,9 @@ def rollback(game_id, token):
                 if not restored.get('ok'):
                     logging.getLogger('storyburrow.build-backups').exception('URGENT: rollback catalog failure and restore failed: %s', restored)
                 raise
-            # The restored build is active again, so its retention marker is no longer valid.
             marker = ROOT.parent / game_id / MARKER
             if marker.is_file() and not marker.is_symlink():
                 marker.unlink()
-            # Discard the replaced (potentially broken) build only after catalog commit.
             from build_backups import remove_unretained
             remove_unretained(failed_build)
             flash('Previous build restored. Current saves were not changed.', 'success')
@@ -111,11 +102,9 @@ def rollback(game_id, token):
             _release(game_id)
     return redirect(url_for('edits.edit_game', game_id=game_id), code=303)
 
-
 LAST_RUN = 0
 
 def cleanup_expired():
-    """Best-effort cleanup. Never delete an unmarked legacy backup."""
     global LAST_RUN
     if time.time() - LAST_RUN < 3600:
         return
@@ -126,7 +115,6 @@ def cleanup_expired():
         for info in expired_tokens():
             game = info['directory']
             try:
-                # Can't reserve an uninstalled game; leave those for manual inspection.
                 row = _guard_background(game)
                 if row is None or row['installation_id'] != info['installation_id']:
                     continue
@@ -140,7 +128,6 @@ def cleanup_expired():
     finally:
         LOCK.release()
 
-
 def _guard_background(name):
     from main import manager_command
     status = manager_command('status')
@@ -149,3 +136,5 @@ def _guard_background(name):
     with connect() as db:
         row = db.execute("SELECT * FROM installations WHERE directory_name=? AND status='installed'", (name,)).fetchone()
     return dict(row) if row else None
+
+

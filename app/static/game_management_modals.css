@@ -1,0 +1,183 @@
+.sb-management-toolbar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    grid-column: 1/-1;
+    border-top: 1px solid var(--border);
+    padding-top: 22px
+}
+
+.sb-management-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-width: 0;
+    min-height: 86px;
+    padding: 12px 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #34473c;
+    color: var(--text);
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color .15s, background .15s
+}
+
+.sb-management-action:hover,
+.sb-management-action:focus-visible {
+    border-color: var(--accent);
+    background: #405748
+}
+
+.sb-management-action svg {
+    flex-shrink: 0
+}
+
+.sb-managed-backdrop[hidden] {
+    display: none !important
+}
+
+.sb-managed-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: #000b
+}
+
+.sb-managed-dialog {
+    display: flex;
+    flex-direction: column;
+    width: min(850px, 100%);
+    max-height: calc(100dvh - 32px);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px #0008;
+    overflow: hidden
+}
+
+.sb-managed-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--border)
+}
+
+.sb-managed-heading h2 {
+    font-size: 1.15rem;
+    margin: 0
+}
+
+.sb-managed-close {
+    background: var(--accent);
+    color: #21172a;
+    border: 0;
+    border-radius: 9px;
+    font-size: 1.5rem;
+    line-height: 1;
+    padding: 7px 13px;
+    cursor: pointer
+}
+
+.sb-managed-content {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 22px;
+    min-height: 90px
+}
+
+.sb-managed-content .sb-update-hint:first-child,
+.sb-build-intro {
+    margin-top: 0
+}
+
+.sb-managed-content .sb-update-current {
+    margin: 16px 0
+}
+
+.sb-managed-content .sb-update-drop {
+    padding: 28px 12px
+}
+
+.sb-build-item {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin: 14px 0;
+    background: var(--card)
+}
+
+.sb-build-item h3 {
+    font-size: 1.1rem;
+    margin: 0 0 8px
+}
+
+.sb-build-item p {
+    color: var(--muted);
+    margin: 0
+}
+
+.sb-build-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 18px
+}
+
+.sb-build-actions form {
+    margin: 0
+}
+
+.sb-build-actions button {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font: inherit;
+    background: var(--accent);
+    color: #19121c
+}
+
+.sb-build-actions button.sb-danger {
+    background: #69383d;
+    color: white
+}
+
+.sb-build-actions button:disabled {
+    opacity: .6;
+    cursor: wait
+}
+
+.sb-build-empty {
+    padding: 16px 0;
+    color: var(--muted)
+}
+
+@media(max-width:650px) {
+    .sb-management-toolbar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px
+    }
+
+    .sb-management-action {
+        min-height: 76px
+    }
+
+    .sb-managed-heading {
+        padding: 10px 14px
+    }
+
+    .sb-managed-content {
+        padding: 16px
+    }
+}

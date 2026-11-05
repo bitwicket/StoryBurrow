@@ -1,0 +1,24 @@
+<div id="sb-update" data-game="{{ game_id }}" data-csrf="{{ csrf }}" data-return="{{ url_for('edits.edit_game', game_id=game_id) }}">
+    <p class="sb-update-hint">Replace this installed copy with a new Ren'Py build. Your managed saves and artwork stay attached to the same installation.</p>
+    <div class="sb-update-current">Current version <strong>{{ current_version or 'Not set — edit it before updating' }}</strong></div>
+    <div id="sb-update-pick">
+        <div id="sb-update-drop" class="sb-update-drop" tabindex="0">Drop a ZIP here, or choose a ZIP or game folder below.</div>
+        <div class="sb-update-actions"><button id="sb-update-pick-zip" type="button">Choose ZIP</button><button id="sb-update-pick-folder" type="button">Choose Folder</button></div>
+        <input id="sb-update-zip" type="file" accept=".zip,application/zip" hidden><input id="sb-update-folder" type="file" webkitdirectory multiple hidden>
+    </div>
+    <div class="sb-update-progress-wrap" id="sb-update-progress-wrap" hidden><progress id="sb-update-progress" max="100" value="0"></progress><span id="sb-update-progress-text"></span></div>
+    <p class="sb-update-message" id="sb-update-message" role="status" aria-live="polite"></p>
+    <section id="sb-update-review" hidden>
+        <h2>Review replacement</h2>
+        <p id="sb-update-inspection" class="sb-update-hint"></p><label for="sb-update-version">Incoming version</label><input id="sb-update-version" maxlength="100" required>
+        <div class="sb-update-hint" style="margin:1.1rem 0;padding:1rem;border:1px solid #526057;border-radius:10px"><label style="display:flex;gap:.75rem;align-items:start"><input type="checkbox" id="sb-retain-build" checked style="width:auto;margin:.2rem 0 0"><span><strong>Keep previous game build for 48 hours</strong><br><small>Use it to roll back if the new build fails. Keeping a full copy needs space roughly equal to the current game size. Saves are snapshotted either way.</small></span></label></div>
+        <p class="sb-update-hint">A verified snapshot of the current saves will be created. Existing mods are not automatically migrated.</p>
+        <div class="sb-update-actions"><button id="sb-update-confirm" type="button" class="play">Create snapshot and update</button></div>
+    </section>
+    <section id="sb-update-success" class="sb-update-success" hidden>
+        <h2>Update complete</h2>
+        <p id="sb-update-summary"></p>
+        <p class="sb-update-hint">Your pre-update save snapshot has been retained. If selected, the previous game build is kept for 48 hours.</p><a class="sb-update-return" href="{{ url_for('edits.edit_game', game_id=game_id) }}">Return to Edit Game</a>
+    </section>
+
+</div>

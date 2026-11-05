@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='edit_game.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='patch_game.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='import_modal.css') }}">
 </head>
 
 <body>
@@ -23,29 +24,8 @@
         <section class="sb-patch-panel">
             <h2>Install a patch</h2>
             {% if not preview %}
-            <form action="{{ url_for('patches.upload', game_id=game_id) }}" method="post" enctype="multipart/form-data" id="sb-patch-upload">
-                <input type="hidden" name="csrf_token" value="{{ csrf }}">
-                <label for="sb-patch-file">ZIP archive or standalone file</label>
-                <input id="sb-patch-file" name="patch" type="file" required>
-                <label for="sb-patch-destination">Standalone file destination <small>(relative to the game's installation directory)</small></label>
-                <input id="sb-patch-destination" name="destination" placeholder="game/scripts/example.rpy — optional; default game/filename">
-                <p class="sb-edit-note">For ZIPs, paths inside the archive determine their destinations. A single enclosing wrapper folder is removed automatically. Maximum upload: 256 MiB.</p>
-                <button class="play" type="submit">Upload and preview</button>
-            </form>
-            <div class="sb-patch-url" data-game-id="{{ game_id }}" data-csrf="{{ csrf }}">
-                <h3>Or download from URL</h3>
-                <p class="sb-edit-note">StoryBurrow downloads directly to the server—your browser never handles the patch file. Direct HTTPS, Gofile, and MEGA file links are supported.</p>
-                <label for="sb-patch-url">Download URL</label>
-                <input id="sb-patch-url" type="url" maxlength="8192" placeholder="https://example.com/translation.zip">
-                <label for="sb-patch-url-destination">Standalone file destination <small>(optional)</small></label>
-                <input id="sb-patch-url-destination" placeholder="game/scripts/translation.rpy">
-                <div class="sb-patch-url-actions">
-                    <button class="play" type="button" id="sb-patch-url-start">Download and preview</button>
-                    <button type="button" id="sb-patch-url-cancel" hidden>Cancel download</button>
-                </div>
-                <progress id="sb-patch-url-progress" max="100" hidden></progress>
-                <p id="sb-patch-url-status" class="sb-edit-note" role="status" aria-live="polite"></p>
-            </div>
+            <p class="sb-edit-note">Upload a ZIP or standalone patch file, or download it directly to the server. You'll review its destinations before anything is installed.</p>
+            <button class="play" type="button" id="sb-patch-open">+ Add patch</button>
             {% else %}
             <h3>Review changes</h3>
             {% if stripped %}<p class="sb-edit-note">Removed enclosing folder <code>{{ stripped }}/</code> from the archive paths.</p>{% endif %}
@@ -93,6 +73,52 @@
         </section>
         <p class="sb-edit-note">Reversion is blocked if patched files have changed or a newer patch overlaps. Your saves are never included in patch operations.</p>
     </main>
+    {% if not preview %}
+    <div id="sb-patch-modal" class="sb-import-backdrop" hidden>
+        <section class="sb-import-dialog" role="dialog" aria-modal="true" aria-labelledby="sb-patch-modal-title">
+            <div class="sb-import-heading">
+                <h2 id="sb-patch-modal-title">Add a patch</h2>
+                <button type="button" id="sb-patch-close" aria-label="Close patch import">×</button>
+            </div>
+            <p class="sb-import-hint">Upload a ZIP or standalone file, or download a patch directly to the server. Review the file destinations before applying.</p>
+            <div id="sb-patch-pick">
+                <div class="sb-import-drop" id="sb-patch-drop" tabindex="0" role="button" aria-label="Drop a patch file here or choose one below">Drop a ZIP or patch file here, or choose a file below.</div>
+                <div class="sb-import-actions">
+                    <button type="button" id="sb-patch-pick-file">Choose File</button>
+                    <button type="button" id="sb-patch-pick-url">Import from URL</button>
+                </div>
+            </div>
+            <form action="{{ url_for('patches.upload', game_id=game_id) }}" method="post" enctype="multipart/form-data" id="sb-patch-upload" hidden>
+                <input type="hidden" name="csrf_token" value="{{ csrf }}">
+                <input id="sb-patch-file" name="patch" type="file" hidden required>
+                <p id="sb-patch-file-name" class="sb-import-hint"></p>
+                <label for="sb-patch-destination">Standalone file destination <small>(optional; relative to the game directory)</small></label>
+                <input id="sb-patch-destination" name="destination" placeholder="game/scripts/example.rpy — defaults to game/filename" autocomplete="off">
+                <p class="sb-import-hint">For ZIPs, destinations come from the archive. A single wrapper folder is removed automatically. Maximum browser upload: 256 MiB.</p>
+                <div class="sb-import-actions">
+                    <button type="submit" class="play">Upload and preview</button>
+                    <button type="button" id="sb-patch-file-back">Back</button>
+                </div>
+            </form>
+            <div class="sb-patch-url" data-game-id="{{ game_id }}" data-csrf="{{ csrf }}" hidden>
+                <label for="sb-patch-url">Download URL</label>
+                <input id="sb-patch-url" type="url" maxlength="8192" placeholder="https://example.com/translation.zip" autocomplete="off">
+                <p class="sb-import-hint">StoryBurrow downloads directly to the server. Supported: HTTP(S) direct downloads, Gofile and MEGA file links.</p>
+                <label for="sb-patch-url-destination">Standalone file destination <small>(optional)</small></label>
+                <input id="sb-patch-url-destination" placeholder="game/scripts/translation.rpy" autocomplete="off">
+                <div class="sb-import-actions">
+                    <button class="play" type="button" id="sb-patch-url-start">Download and preview</button>
+                    <button type="button" id="sb-patch-url-cancel" hidden>Cancel download</button>
+                    <button type="button" id="sb-patch-url-back">Back</button>
+                </div>
+                <progress id="sb-patch-url-progress" max="100" hidden></progress>
+                <p id="sb-patch-url-status" class="sb-import-hint" role="status" aria-live="polite"></p>
+            </div>
+        </section>
+    </div>
+    {% endif %}
+    <script src="{{ url_for('static', filename='patch_modal.js') }}" defer></script>
     <script src="{{ url_for('static', filename='patch_url.js') }}" defer></script>
 </body>
+
 </html>

@@ -1,0 +1,18 @@
+<div class="sb-build-list">
+    <p class="sb-build-intro">Retained game builds expire after 48 hours. Restoring one replaces only the game files and recorded installed version. Your active saves remain unchanged.</p>
+    {% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<p class="notice">{{ message }}</p>{% endfor %}{% endwith %}
+    {% for item in backups %}
+    <section class="sb-build-item">
+        <div class="sb-build-item-head">
+            <h3>Version {{ item.previous_version }}</h3>
+            <p>Created during update to {{ item.updated_version }} · Expires {{ item.expiration_local }}</p>
+        </div>
+        <div class="sb-build-actions">
+            <form method="post" action="{{ url_for('build_backups.rollback',game_id=game_id,token=item.token) }}" data-sb-build-operation="rollback" onsubmit="return confirm('Replace the installed game files with version {{ item.previous_version }}? Active saves will stay unchanged.');"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="confirm" value="rollback"><button type="submit">Roll back to this build</button></form>
+            <form method="post" action="{{ url_for('build_backups.delete',game_id=game_id,token=item.token) }}" data-sb-build-operation="delete" onsubmit="return prompt('Type delete to permanently delete this previous build:')?.trim().toLowerCase()==='delete';"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="confirm" value="delete"><button type="submit" class="sb-danger">Delete backup</button></form>
+        </div>
+    </section>
+    {% else %}<p class="sb-build-empty">No retained previous builds for this installation.</p>{% endfor %}
+</div>
+
+
