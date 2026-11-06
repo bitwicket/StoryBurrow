@@ -19,8 +19,63 @@ WINDOW_FIT_TIMEOUT = 20.0
 WINDOW_STABILIZE_SECONDS = 8.0
 WINDOW_STABILIZE_INTERVAL = 0.5
 STOP_GRACE_SECONDS = 4.0
+FOCUS_INTERVAL = 1
+
+#window geomtery helpers
+def focused_window_id(env):
+    result = subprocess.run(
+        ['xdotool', 'getwindowfocus'], env=env, capture_output=True,
+        text=True, check=False, timeout=3)
+    if result.returncode != 0:
+        return None
+    try:
+        return int(result.stdout.strip())
+    except ValueError:
+        return None
+
+def focus_window(window_id, env):
+    result = subprocess.run(['xdotool', 'windowfocus', window_id], env=env, capture_output=True,
+                            check=False, text=True, timeout=3)
+    if result.returncode != 0:
+        print(f'[StoryBurrow] windowfocus {window_id} failed: {result.stderr.strip()}', flush=True)
 
 
+def maintain_game_window(proc, name, window_id, existing_windows, env):
+    #track the game window and keep it focused, resolves splash screens and other windows stealing focus
+    width, height = desktop_size(env)
+    expected = (width, height, 0, 0)
+    tracked = window_id
+    fit_until = time.monotonic() + WINDOW_STABILIZE_SECONDS
+    while proc.poll() is None:
+        try:
+            windows = x11_windows(env)
+            if tracked not in windows:
+                fresh = [w for w in windows if w not in existing_windows]
+                if len(fresh) != 1:
+                    time.sleep(FOCUS_INTERVAL)
+                    continue
+                tracked = fresh[0]
+                fit_until = time.monotonic() + WINDOW_STABILIZE_SECONDS
+                print(f'[StoryBurrow] {name} window changed; now tracking {tracked}', flush=True)
+            if time.monotonic() < fit_until:
+                try:
+                    actual = window_geometry(tracked, env)
+                except (RuntimeError, subprocess.SubprocessError):
+                    time.sleep(FOCUS_INTERVAL)
+                    continue
+                if actual != expected:
+                    subprocess.run(['xdotool', 'windowsize', tracked, str(width), str(height)],
+                                   env=env, check=False, capture_output=True, timeout=3)
+                    subprocess.run(['xdotool', 'windowmove', tracked, '0', '0'],
+                                   env=env, check=False, capture_output=True, timeout=3)
+                    print(f'[StoryBurrow] Fitted {name} window {tracked} '
+                          f'from {actual[0]}x{actual[1]}+{actual[2]}+{actual[3]} '
+                          f'to {width}x{height}+0+0', flush=True)
+            if focused_window_id(env) != int(tracked, 16):
+                focus_window(tracked, env)
+        except (OSError, subprocess.SubprocessError, RuntimeError) as exc:
+            print(f'[StoryBurrow] Window maintenance error for {name}: {exc}', flush=True)
+        time.sleep(FOCUS_INTERVAL)
 
 def find_game(name):
     if not isinstance(name, str) or not VALID_NAME.fullmatch(name) or name in ('.', '..'):
@@ -108,32 +163,12 @@ def fit_game_window(proc, name, existing_windows, env):
             else:
                 previous, stable_checks = None, 0
             time.sleep(0.4)
-
         if candidate is None or proc.poll() is not None:
             if proc.poll() is None:
                 print(f'[StoryBurrow] Window fitting skipped for {name}: '
                       'no unambiguous new game window found', flush=True)
             return
-
-        width, height = desktop_size(env)
-        expected = (width, height, 0, 0)
-        stabilize_until = time.monotonic() + WINDOW_STABILIZE_SECONDS
-        adjustments = 0
-        while time.monotonic() < stabilize_until and proc.poll() is None:
-            actual = window_geometry(candidate, env)
-            if actual != expected:
-                subprocess.run(['xdotool', 'windowsize', candidate, str(width), str(height)],
-                               env=env, check=True, capture_output=True, timeout=3)
-                subprocess.run(['xdotool', 'windowmove', candidate, '0', '0'],
-                               env=env, check=True, capture_output=True, timeout=3)
-                adjustments += 1
-                print(f'[StoryBurrow] Fitted {name} window {candidate} '
-                      f'from {actual[0]}x{actual[1]}+{actual[2]}+{actual[3]} '
-                      f'to {width}x{height}+0+0 (adjustment {adjustments})', flush=True)
-            time.sleep(WINDOW_STABILIZE_INTERVAL)
-        if proc.poll() is None:
-            print(f'[StoryBurrow] Window stabilization finished for {name}; '
-                  f'adjustments={adjustments}', flush=True)
+        maintain_game_window(proc, name, candidate, existing_windows, env)
     except (OSError, subprocess.SubprocessError, RuntimeError) as exc:
         print(f'[StoryBurrow] Window fitting unavailable for {name}: {exc}', flush=True)
 
@@ -289,19 +324,15 @@ class Session:
                 logpath = LOG_DIR / f'{name}.log'
                 env = os.environ.copy()
                 env.setdefault('SDL_VIDEODRIVER', 'x11')
-
                 try:
                     from save_routing import _read_config, SAVES as ROUTE_SAVES
-
                     route = _read_config().get(name)
-
                     if route is not None:
                         namespace = route['namespace']
                         root = ROUTE_SAVES / namespace
                         current = root / 'current'
                         parent = root / 'renpy-parent'
                         local = directory / 'game' / 'saves'
-
                         if (not current.is_dir()
                                 or not local.is_symlink()
                                 or local.resolve() != current.resolve()
@@ -309,21 +340,16 @@ class Session:
                             raise ValueError(
                                 'Managed save routing is not prepared correctly'
                             )
-
                         env['RENPY_PATH_TO_SAVES'] = str(parent)
-
                         print(
                             f'[StoryBurrow] Managed saves active for {name}: {root}',
                             flush=True
                         )
-
                     else:
                         # Temporary legacy routing until this game is migrated.
                         env['RENPY_PATH_TO_SAVES'] = '/saves'
-
                 except (OSError, ValueError, KeyError) as exc:
                     raise ValueError(f'Managed save routing check failed: {exc}')
-
                 try:
                     existing_windows = x11_windows(env)
                 except (OSError, subprocess.SubprocessError) as exc:
@@ -409,9 +435,7 @@ class Session:
                     pass
                 proc.wait()
 
-
 SESSION = Session()
-
 
 class Handler(socketserver.StreamRequestHandler):
     def handle(self):
@@ -449,10 +473,8 @@ class Handler(socketserver.StreamRequestHandler):
             result = {'ok': False, 'error': str(exc)}
         self.wfile.write((json.dumps(result) + '\n').encode())
 
-
 class Server(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
     daemon_threads = True
-
 
 def main():
     SOCKET.parent.mkdir(parents=True, exist_ok=True)
@@ -470,7 +492,6 @@ def main():
         finally:
             SESSION.shutdown()
             SOCKET.unlink(missing_ok=True)
-
 
 if __name__ == '__main__':
     main()
