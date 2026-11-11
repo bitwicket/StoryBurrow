@@ -1,4 +1,9 @@
-# StoryBurrow
+<h1> 
+  StoryBurrow
+  <a href="https://github.com/bitwicket/StoryBurrow">
+    <img src="https://github.com/bitwicket/StoryBurrow/actions/workflows/docker-publish.yml/badge.svg" alt="Docker Publish Status" align="right />
+  </a>
+</h1>
 
 **A self-hosted home for Ren’Py games.**
 
