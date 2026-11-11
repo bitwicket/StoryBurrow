@@ -1,3 +1,5 @@
+[![Publish Docker](https://github.com/bitwicket/StoryBurrow/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/bitwicket/StoryBurrow/actions/workflows/docker-publish.yml)
+
 # StoryBurrow
 
 **A self-hosted home for Ren’Py games.**
